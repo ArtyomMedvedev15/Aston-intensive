@@ -1,15 +1,8 @@
 package com.aston.servlets;
 
-import com.aston.dao.api.ProjectDaoApi;
-import com.aston.dao.api.TaskDaoApi;
-import com.aston.dao.api.TransactionManager;
-import com.aston.dao.api.UserDaoApi;
+import com.aston.dao.api.*;
 import com.aston.dao.datasource.HikariPostgreSQLConfig;
-import com.aston.dao.implementation.ProjectDaoImplementation;
-import com.aston.dao.implementation.TaskDaoImplementation;
-import com.aston.dao.implementation.TransactionManagerImplementation;
-import com.aston.dao.implementation.UserDaoImplementation;
-import com.aston.util.TransactionManagerException;
+import com.aston.dao.implementation.*;
 
 import javax.servlet.ServletContext;
 import javax.servlet.ServletContextEvent;
@@ -24,6 +17,8 @@ public class ContextListener implements ServletContextListener {
     private TaskDaoApi taskDaoApi;
     private ProjectDaoApi projectDaoApi;
 
+    private UserTaskDaoApi userTaskDaoApi;
+
     @Override
     public void contextInitialized(ServletContextEvent servletContextEvent) {
         final ServletContext servletContext =
@@ -37,9 +32,12 @@ public class ContextListener implements ServletContextListener {
         this.userDaoApi = new UserDaoImplementation(transactionManager);
         this.taskDaoApi = new TaskDaoImplementation(transactionManager);
         this.projectDaoApi = new ProjectDaoImplementation(transactionManager);
+        this.userTaskDaoApi = new UserTaskImplementation(transactionManager);
+
         servletContext.setAttribute("userDao", userDaoApi);
         servletContext.setAttribute("taskDao", taskDaoApi);
         servletContext.setAttribute("projectDao", projectDaoApi);
+        servletContext.setAttribute("userTaskDao", userTaskDaoApi);
 
     }
 
