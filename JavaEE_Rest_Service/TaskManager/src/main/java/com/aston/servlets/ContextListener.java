@@ -1,9 +1,11 @@
 package com.aston.servlets;
 
+import com.aston.dao.api.ProjectDaoApi;
 import com.aston.dao.api.TaskDaoApi;
 import com.aston.dao.api.TransactionManager;
 import com.aston.dao.api.UserDaoApi;
 import com.aston.dao.datasource.HikariPostgreSQLConfig;
+import com.aston.dao.implementation.ProjectDaoImplementation;
 import com.aston.dao.implementation.TaskDaoImplementation;
 import com.aston.dao.implementation.TransactionManagerImplementation;
 import com.aston.dao.implementation.UserDaoImplementation;
@@ -20,6 +22,7 @@ public class ContextListener implements ServletContextListener {
 
     private UserDaoApi userDaoApi;
     private TaskDaoApi taskDaoApi;
+    private ProjectDaoApi projectDaoApi;
 
     @Override
     public void contextInitialized(ServletContextEvent servletContextEvent) {
@@ -33,9 +36,11 @@ public class ContextListener implements ServletContextListener {
 
         this.userDaoApi = new UserDaoImplementation(transactionManager);
         this.taskDaoApi = new TaskDaoImplementation(transactionManager);
-
+        this.projectDaoApi = new ProjectDaoImplementation(transactionManager);
         servletContext.setAttribute("userDao", userDaoApi);
         servletContext.setAttribute("taskDao", taskDaoApi);
+        servletContext.setAttribute("projectDao", projectDaoApi);
+
     }
 
     @Override
