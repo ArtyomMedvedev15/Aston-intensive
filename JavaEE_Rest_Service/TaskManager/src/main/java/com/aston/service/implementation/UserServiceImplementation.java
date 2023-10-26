@@ -4,11 +4,9 @@ import com.aston.dao.api.TransactionManager;
 import com.aston.dao.api.UserDaoApi;
 import com.aston.entities.User;
 import com.aston.service.api.UserServiceApi;
-import com.aston.util.TransactionManagerException;
 import com.aston.util.dto.UserDto;
 import lombok.extern.slf4j.Slf4j;
 
-import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;

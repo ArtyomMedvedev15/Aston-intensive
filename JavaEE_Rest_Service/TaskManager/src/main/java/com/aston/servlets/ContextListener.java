@@ -3,7 +3,9 @@ package com.aston.servlets;
 import com.aston.dao.api.*;
 import com.aston.dao.datasource.HikariPostgreSQLConfig;
 import com.aston.dao.implementation.*;
+import com.aston.service.api.ProjectServiceApi;
 import com.aston.service.api.UserServiceApi;
+import com.aston.service.implementation.ProjectServiceImplementation;
 import com.aston.service.implementation.UserServiceImplementation;
 
 import javax.servlet.ServletContext;
@@ -20,6 +22,7 @@ public class ContextListener implements ServletContextListener {
     private ProjectDaoApi projectDaoApi;
     private UserTaskDaoApi userTaskDaoApi;
     private UserServiceApi userServiceApi;
+    private ProjectServiceApi projectServiceApi;
 
     @Override
     public void contextInitialized(ServletContextEvent servletContextEvent) {
@@ -29,18 +32,21 @@ public class ContextListener implements ServletContextListener {
         DataSource dataSource = HikariPostgreSQLConfig.getHikariDataSource();
         TransactionManager transactionManager = new TransactionManagerImplementation(dataSource);;
 
-
-
         this.userDaoApi = new UserDaoImplementation(transactionManager);
         this.taskDaoApi = new TaskDaoImplementation(transactionManager);
         this.projectDaoApi = new ProjectDaoImplementation(transactionManager);
         this.userTaskDaoApi = new UserTaskImplementation(transactionManager);
-        this.userServiceApi = new UserServiceImplementation(new UserDaoImplementation(transactionManager),transactionManager);
+        this.userServiceApi = new UserServiceImplementation(userDaoApi,transactionManager);
+        this.projectServiceApi = new ProjectServiceImplementation(projectDaoApi,transactionManager);
 
         servletContext.setAttribute("userService",userServiceApi);
         servletContext.setAttribute("userDao", userDaoApi);
+
         servletContext.setAttribute("taskDao", taskDaoApi);
+
+        servletContext.setAttribute("projectService",projectServiceApi);
         servletContext.setAttribute("projectDao", projectDaoApi);
+
         servletContext.setAttribute("userTaskDao", userTaskDaoApi);
 
     }

@@ -16,7 +16,7 @@ public class ProjectDaoImplementation implements ProjectDaoApi {
 
     private final static String INSERT_PROJECT_QUERY = "INSERT INTO project(name,description)VALUES(?,?)";
     private final static String SELECT_PROJECT_BY_ID_QUERY = "SELECT * FROM project WHERE id = ?";
-    private final static String SELECT_PROJECT_BY_NAME_QUERY ="SELECT *FROM project WHERE name LIKE %?%";
+    private final static String SELECT_PROJECT_BY_NAME_QUERY ="SELECT *FROM project WHERE name LIKE ?";
     private final static String SELECT_ALL_PROJECT_QUERY = "SELECT * FROM project";
     private final static String UPDATE_PROJECT_QUERY = "UPDATE project SET name=?, description=? WHERE id=?";
     private final static String DELETE_PROJECT_QUERY = "DELETE FROM project WHERE id = ?";
@@ -47,68 +47,10 @@ public class ProjectDaoImplementation implements ProjectDaoApi {
             log.error(ex.getMessage(), ex);
             transactionManager.rollbackSession();
             throw ex;
+        }finally {
+            transactionManager.close();
         }
     }
-
-    @Override
-    public Project getProjectById(int projectId) throws SQLException {
-        Project dbProject = null;
-        transactionManager.beginSession();
-        try (Connection connection = transactionManager.getCurrentSession();
-             PreparedStatement pst = connection.prepareStatement(SELECT_PROJECT_BY_ID_QUERY)) {
-            pst.setInt(1, projectId);
-            try (ResultSet rs = pst.executeQuery()) {
-                if (rs.next()) {
-                    dbProject = parseProjectFromResultSet(rs);
-                }
-            }
-        } catch (SQLException ex) {
-            log.error(ex.getMessage(), ex);
-            transactionManager.rollbackSession();
-            throw ex;
-        }
-        return dbProject;
-    }
-
-    @Override
-    public  List<Project> getProjectByName(String name) throws SQLException {
-        List<Project> projectByNameList = new ArrayList<>();
-        transactionManager.beginSession();
-        try (Connection connection = transactionManager.getCurrentSession();
-             PreparedStatement pst = connection.prepareStatement(SELECT_PROJECT_BY_NAME_QUERY)) {
-            pst.setString(1,name);
-            try (ResultSet rs = pst.executeQuery()) {
-                while (rs.next()) {
-                    projectByNameList.add(parseProjectFromResultSet(rs));
-                }
-            }
-        } catch (SQLException ex) {
-            log.error(ex.getMessage(), ex);
-            transactionManager.rollbackSession();
-            throw ex;
-        }
-        return projectByNameList;
-    }
-
-    @Override
-    public List<Project> getAllProject() throws SQLException {
-        List<Project> projectAllList = new ArrayList<>();
-        transactionManager.beginSession();
-        try (Connection connection = transactionManager.getCurrentSession();
-             PreparedStatement pst = connection.prepareStatement(SELECT_ALL_PROJECT_QUERY)) {
-             try (ResultSet rs = pst.executeQuery()) {
-                while (rs.next()) {
-                    projectAllList.add(parseProjectFromResultSet(rs));
-                }
-            }
-        } catch (SQLException ex) {
-            log.error(ex.getMessage(), ex);
-            transactionManager.rollbackSession();
-            throw ex;
-        }
-        return projectAllList;
-    }
-
     @Override
     public int updateProject(Project project) throws SQLException {
         int rowsUpdated = 0;
@@ -142,12 +84,77 @@ public class ProjectDaoImplementation implements ProjectDaoApi {
             log.error(ex.getMessage(), ex);
             transactionManager.rollbackSession();
             throw ex;
+        }finally {
+            transactionManager.close();
         }
         return updated_rows;
     }
+    @Override
+    public Project getProjectById(int projectId) throws SQLException {
+        Project dbProject = null;
+        transactionManager.beginSession();
+        try (Connection connection = transactionManager.getCurrentSession();
+             PreparedStatement pst = connection.prepareStatement(SELECT_PROJECT_BY_ID_QUERY)) {
+            pst.setInt(1, projectId);
+            try (ResultSet rs = pst.executeQuery()) {
+                if (rs.next()) {
+                    dbProject = parseProjectFromResultSet(rs);
+                }
+            }
+        } catch (SQLException ex) {
+            log.error(ex.getMessage(), ex);
+            transactionManager.rollbackSession();
+            throw ex;
+        }finally {
+            transactionManager.close();
+        }
+        return dbProject;
+    }
+
+    @Override
+    public  List<Project> getProjectByName(String name) throws SQLException {
+        List<Project> projectByNameList = new ArrayList<>();
+        transactionManager.beginSession();
+        try (Connection connection = transactionManager.getCurrentSession();
+             PreparedStatement pst = connection.prepareStatement(SELECT_PROJECT_BY_NAME_QUERY)) {
+            String pattern = "%"+name+"%";
+            pst.setString(1,pattern);
+            try (ResultSet rs = pst.executeQuery()) {
+                while (rs.next()) {
+                    projectByNameList.add(parseProjectFromResultSet(rs));
+                }
+            }
+        } catch (SQLException ex) {
+            log.error(ex.getMessage(), ex);
+            transactionManager.rollbackSession();
+            throw ex;
+        }
+        return projectByNameList;
+    }
+
+    @Override
+    public List<Project> getAllProject() throws SQLException {
+        List<Project> projectAllList = new ArrayList<>();
+        transactionManager.beginSession();
+        try (Connection connection = transactionManager.getCurrentSession();
+             PreparedStatement pst = connection.prepareStatement(SELECT_ALL_PROJECT_QUERY)) {
+             try (ResultSet rs = pst.executeQuery()) {
+                while (rs.next()) {
+                    projectAllList.add(parseProjectFromResultSet(rs));
+                }
+            }
+        } catch (SQLException ex) {
+            log.error(ex.getMessage(), ex);
+            transactionManager.rollbackSession();
+            throw ex;
+        }
+        return projectAllList;
+    }
+
+
 
     private Project parseProjectFromResultSet(ResultSet rs) throws SQLException {
-        Project projectMapper = new Project();
+        Project projectMapper = Project.builder().build();
         projectMapper.setId(Integer.parseInt(rs.getString("id")));
         projectMapper.setName(rs.getString("name"));
         projectMapper.setDescription(rs.getString("description"));
