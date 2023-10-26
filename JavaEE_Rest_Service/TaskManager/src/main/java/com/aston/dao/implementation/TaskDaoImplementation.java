@@ -97,7 +97,7 @@ public class TaskDaoImplementation implements TaskDaoApi {
         List<Task> allTaskList = new ArrayList<>();
         transactionManager.beginSession();
         try (Connection connection = transactionManager.getCurrentSession();
-             PreparedStatement pst = connection.prepareStatement(SELECT_ALL_TASK_QUERY)) {
+             PreparedStatement pst = connection.prepareStatement(SELECT_TASK_BY_PROJECT_ID_QUERY)) {
             pst.setInt(1, projectId);
 
             try (ResultSet rs = pst.executeQuery()) {
@@ -154,13 +154,13 @@ public class TaskDaoImplementation implements TaskDaoApi {
     }
 
     private Task parseTaskFromResultSet(ResultSet rs) throws SQLException {
-        Task taskMapper = new Task();
+        Task taskMapper = Task.builder().build();
         taskMapper.setId((long) Integer.parseInt(rs.getString("id")));
         taskMapper.setTitle(rs.getString("title"));
         taskMapper.setDescription(rs.getString("description"));
         taskMapper.setDeadline(rs.getDate("deadline"));
         taskMapper.setStatus(rs.getString("status"));
-        taskMapper.setProjectId(rs.getLong("projectId"));
+        taskMapper.setProjectId(rs.getInt("projectId"));
         return taskMapper;
     }
 }

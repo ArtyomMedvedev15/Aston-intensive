@@ -11,7 +11,6 @@ public interface TaskDaoApi {
      Task getTaskById(int taskId) throws SQLException;
      List<Task> getAllTasks() throws SQLException;
      List<Task> getAllTasksByProject(int projectId) throws SQLException;
-
      int updateTask(Task task) throws SQLException;
      int deleteTask(int taskId) throws SQLException;
 }

@@ -4,8 +4,10 @@ import com.aston.dao.api.*;
 import com.aston.dao.datasource.HikariPostgreSQLConfig;
 import com.aston.dao.implementation.*;
 import com.aston.service.api.ProjectServiceApi;
+import com.aston.service.api.TaskServiceApi;
 import com.aston.service.api.UserServiceApi;
 import com.aston.service.implementation.ProjectServiceImplementation;
+import com.aston.service.implementation.TaskServiceImplementation;
 import com.aston.service.implementation.UserServiceImplementation;
 
 import javax.servlet.ServletContext;
@@ -23,6 +25,7 @@ public class ContextListener implements ServletContextListener {
     private UserTaskDaoApi userTaskDaoApi;
     private UserServiceApi userServiceApi;
     private ProjectServiceApi projectServiceApi;
+    private TaskServiceApi taskServiceApi;
 
     @Override
     public void contextInitialized(ServletContextEvent servletContextEvent) {
@@ -38,10 +41,13 @@ public class ContextListener implements ServletContextListener {
         this.userTaskDaoApi = new UserTaskImplementation(transactionManager);
         this.userServiceApi = new UserServiceImplementation(userDaoApi,transactionManager);
         this.projectServiceApi = new ProjectServiceImplementation(projectDaoApi,transactionManager);
+        this.taskServiceApi = new TaskServiceImplementation(taskDaoApi,transactionManager,projectServiceApi);
+
 
         servletContext.setAttribute("userService",userServiceApi);
         servletContext.setAttribute("userDao", userDaoApi);
 
+        servletContext.setAttribute("taskService",taskServiceApi);
         servletContext.setAttribute("taskDao", taskDaoApi);
 
         servletContext.setAttribute("projectService",projectServiceApi);
