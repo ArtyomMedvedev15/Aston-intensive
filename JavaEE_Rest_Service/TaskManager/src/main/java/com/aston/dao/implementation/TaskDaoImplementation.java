@@ -1,14 +1,13 @@
 package com.aston.dao.implementation;
 
 import com.aston.dao.api.TaskDaoApi;
-import com.aston.dao.api.TransactionManager;
+import com.aston.dao.datasource.ConnectionManager;
 import com.aston.entities.Task;
-import com.aston.entities.User;
-import com.aston.util.TransactionManagerException;
 import lombok.extern.slf4j.Slf4j;
 
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 @Slf4j
@@ -21,18 +20,16 @@ public class TaskDaoImplementation implements TaskDaoApi {
     private static final String UPDATE_TASK_QUERY = "UPDATE task SET title=?,description=?,deadline=?,status=?,projectId=? WHERE id=?";
     private static final String DELETE_TASK_QUERY = "DELETE FROM task WHERE id=?";
 
-    private final TransactionManager transactionManager;
-
-    public TaskDaoImplementation(TransactionManager transactionManager) {
-        this.transactionManager = transactionManager;
+    private final ConnectionManager connectionManager;
+    public TaskDaoImplementation(ConnectionManager connectionManager) {
+        this.connectionManager = connectionManager;
     }
 
 
     @Override
     public int createTask(Task task) throws SQLException {
-        transactionManager.beginSession();
-        try (Connection connection = transactionManager.getCurrentSession();
-             PreparedStatement pst = connection.prepareStatement(INSERT_TASK_QUERY, Statement.RETURN_GENERATED_KEYS)) {
+        Connection connection = connectionManager.getConnection();
+        try (PreparedStatement pst = connection.prepareStatement(INSERT_TASK_QUERY, Statement.RETURN_GENERATED_KEYS)) {
             pst.setString(1, task.getTitle());
             pst.setString(2, task.getDescription());
             pst.setDate(3, task.getDeadline());
@@ -43,12 +40,11 @@ public class TaskDaoImplementation implements TaskDaoApi {
             try (ResultSet rs = pst.getGeneratedKeys()) {
                 rs.next();
                 int id = rs.getInt(1);
-                transactionManager.commitSession();
+                log.info("Create new task with id {} in {}",id,new Date());
                 return id;
             }
         } catch (SQLException ex) {
             log.error(ex.getMessage(), ex);
-            transactionManager.rollbackSession();
             throw ex;
         }
     }
@@ -56,9 +52,8 @@ public class TaskDaoImplementation implements TaskDaoApi {
     @Override
     public Task getTaskById(int taskId) throws SQLException {
         Task dbTask = null;
-        transactionManager.beginSession();
-        try (Connection connection = transactionManager.getCurrentSession();
-             PreparedStatement pst = connection.prepareStatement(SELECT_TASK_BY_ID_QUERY)) {
+        Connection connection = connectionManager.getConnection();
+        try (PreparedStatement pst = connection.prepareStatement(SELECT_TASK_BY_ID_QUERY)) {
             pst.setInt(1, taskId);
             try (ResultSet rs = pst.executeQuery()) {
                 if (rs.next()) {
@@ -67,18 +62,17 @@ public class TaskDaoImplementation implements TaskDaoApi {
             }
         } catch (SQLException ex) {
             log.error(ex.getMessage(), ex);
-            transactionManager.rollbackSession();
             throw ex;
         }
+        log.info("Get task by id with id {} in {}",taskId,new Date());
         return dbTask;
     }
 
     @Override
     public List<Task> getAllTasks() throws SQLException {
         List<Task> allTaskList = new ArrayList<>();
-        transactionManager.beginSession();
-        try (Connection connection = transactionManager.getCurrentSession();
-             PreparedStatement pst = connection.prepareStatement(SELECT_ALL_TASK_QUERY)) {
+        Connection connection = connectionManager.getConnection();
+        try (PreparedStatement pst = connection.prepareStatement(SELECT_ALL_TASK_QUERY)) {
             try (ResultSet rs = pst.executeQuery()) {
                 while (rs.next()) {
                     allTaskList.add(parseTaskFromResultSet(rs));
@@ -86,20 +80,18 @@ public class TaskDaoImplementation implements TaskDaoApi {
             }
         } catch (SQLException ex) {
             log.error(ex.getMessage(), ex);
-            transactionManager.rollbackSession();
-            throw ex;
+             throw ex;
         }
+        log.info("Get all task in {}",new Date());
         return allTaskList;
     }
 
     @Override
     public List<Task> getAllTasksByProject(int projectId) throws SQLException {
+        Connection connection = connectionManager.getConnection();
         List<Task> allTaskList = new ArrayList<>();
-        transactionManager.beginSession();
-        try (Connection connection = transactionManager.getCurrentSession();
-             PreparedStatement pst = connection.prepareStatement(SELECT_TASK_BY_PROJECT_ID_QUERY)) {
+        try (PreparedStatement pst = connection.prepareStatement(SELECT_TASK_BY_PROJECT_ID_QUERY)) {
             pst.setInt(1, projectId);
-
             try (ResultSet rs = pst.executeQuery()) {
                 while (rs.next()) {
                     allTaskList.add(parseTaskFromResultSet(rs));
@@ -107,18 +99,17 @@ public class TaskDaoImplementation implements TaskDaoApi {
             }
         } catch (SQLException ex) {
             log.error(ex.getMessage(), ex);
-            transactionManager.rollbackSession();
             throw ex;
         }
+        log.info("Get all task by project with id {} in {}",projectId,new Date());
         return allTaskList;
     }
 
     @Override
     public int updateTask(Task task) throws SQLException {
+        Connection connection = connectionManager.getConnection();
         int rowsUpdated = 0;
-        transactionManager.beginSession();
-        try (Connection connection = transactionManager.getCurrentSession();
-             PreparedStatement pst = connection.prepareStatement(UPDATE_TASK_QUERY)) {
+         try (PreparedStatement pst = connection.prepareStatement(UPDATE_TASK_QUERY)) {
             pst.setString(1, task.getTitle());
             pst.setString(2, task.getDescription());
             pst.setDate(3, task.getDeadline());
@@ -126,30 +117,26 @@ public class TaskDaoImplementation implements TaskDaoApi {
             pst.setLong(5, task.getProjectId());
             pst.setLong(6,task.getId());
             rowsUpdated = pst.executeUpdate();
-            transactionManager.commitSession();
-
         } catch (SQLException ex) {
             log.error(ex.getMessage(), ex);
-            transactionManager.rollbackSession();
             throw ex;
         }
+         log.info("Update task with id {} in {}",rowsUpdated,new Date());
         return rowsUpdated;
     }
 
     @Override
     public int deleteTask(int taskId) throws SQLException {
+        Connection connection = connectionManager.getConnection();
         int updated_rows;
-        transactionManager.beginSession();
-        try (Connection connection = transactionManager.getCurrentSession();
-             PreparedStatement pst = connection.prepareStatement(DELETE_TASK_QUERY)) {
+         try (PreparedStatement pst = connection.prepareStatement(DELETE_TASK_QUERY)) {
             pst.setLong(1, taskId);
             updated_rows = pst.executeUpdate();
-            transactionManager.commitSession();
         } catch (SQLException ex) {
             log.error(ex.getMessage(), ex);
-            transactionManager.rollbackSession();
             throw ex;
         }
+         log.info("Delete task with id {} in {}",taskId,new Date());
         return updated_rows;
     }
 

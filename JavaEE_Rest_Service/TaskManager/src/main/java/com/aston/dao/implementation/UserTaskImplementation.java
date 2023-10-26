@@ -1,12 +1,13 @@
 package com.aston.dao.implementation;
 
-import com.aston.dao.api.TransactionManager;
 import com.aston.dao.api.UserTaskDaoApi;
+import com.aston.dao.datasource.ConnectionManager;
 import com.aston.entities.UserTask;
 import lombok.extern.slf4j.Slf4j;
 
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 @Slf4j
@@ -17,40 +18,39 @@ public class UserTaskImplementation implements UserTaskDaoApi {
     private static final String SELECT_USER_TASK_BY_USER_QUERY = "SELECT * FROM usertask WHERE userid = ?";
     private static final String SELECT_ALL_USER_TASK_QUERY = "SELECT * FROM usertask";
 
-    private final TransactionManager transactionManager;
+    private final ConnectionManager connectionManager;
 
-    public UserTaskImplementation(TransactionManager transactionManager) {
-        this.transactionManager = transactionManager;
+
+    public UserTaskImplementation(ConnectionManager connectionManager) {
+
+        this.connectionManager = connectionManager;
     }
 
     @Override
     public int createUserTask(UserTask userTask) throws SQLException {
-        transactionManager.beginSession();
-        try (Connection connection = transactionManager.getCurrentSession();
-             PreparedStatement pst = connection.prepareStatement(INSERT_USER_TASK_QUERY, Statement.RETURN_GENERATED_KEYS)) {
+        Connection connection = connectionManager.getConnection();
+
+        try (PreparedStatement pst = connection.prepareStatement(INSERT_USER_TASK_QUERY, Statement.RETURN_GENERATED_KEYS)) {
             pst.setInt(1, userTask.getUserId());
             pst.setInt(2, userTask.getTaskId());
             pst.executeUpdate();
             try (ResultSet rs = pst.getGeneratedKeys()) {
                 rs.next();
                 int id = rs.getInt(1);
-                transactionManager.commitSession();
+                log.info("Save new user task with id {} in {}",id,new Date());
                 return id;
             }
-
         } catch (SQLException ex) {
             log.error(ex.getMessage(), ex);
-            transactionManager.rollbackSession();
             throw ex;
         }
     }
 
     @Override
     public List<UserTask> getAllUserTaskByUser(int userid) throws SQLException {
+        Connection connection = connectionManager.getConnection();
         List<UserTask> userTaskList = new ArrayList<>();
-        transactionManager.beginSession();
-        try (Connection connection = transactionManager.getCurrentSession();
-             PreparedStatement pst = connection.prepareStatement(SELECT_USER_TASK_BY_USER_QUERY)) {
+        try (PreparedStatement pst = connection.prepareStatement(SELECT_USER_TASK_BY_USER_QUERY)) {
             pst.setInt(1,userid);
             try (ResultSet rs = pst.executeQuery()) {
                 while (rs.next()) {
@@ -59,18 +59,17 @@ public class UserTaskImplementation implements UserTaskDaoApi {
             }
         } catch (SQLException ex) {
             log.error(ex.getMessage(), ex);
-            transactionManager.rollbackSession();
             throw ex;
         }
+        log.info("Get all user task with user id {} in {}",userid, new Date());
         return userTaskList;
     }
 
     @Override
     public List<UserTask> getAllUsersTask() throws SQLException {
+        Connection connection = connectionManager.getConnection();
         List<UserTask> userTaskList = new ArrayList<>();
-        transactionManager.beginSession();
-        try (Connection connection = transactionManager.getCurrentSession();
-             PreparedStatement pst = connection.prepareStatement(SELECT_ALL_USER_TASK_QUERY)) {
+        try (PreparedStatement pst = connection.prepareStatement(SELECT_ALL_USER_TASK_QUERY)) {
              try (ResultSet rs = pst.executeQuery()) {
                 while (rs.next()) {
                     userTaskList.add(parseUserTaskFromResultSet(rs));
@@ -78,26 +77,24 @@ public class UserTaskImplementation implements UserTaskDaoApi {
             }
         } catch (SQLException ex) {
             log.error(ex.getMessage(), ex);
-            transactionManager.rollbackSession();
             throw ex;
         }
+        log.info("Get all user task in {}",new Date());
         return userTaskList;
     }
 
     @Override
     public int deleteUserTask(int id) throws SQLException {
+        Connection connection = connectionManager.getConnection();
         int updated_rows;
-        transactionManager.beginSession();
-        try (Connection connection = transactionManager.getCurrentSession();
-             PreparedStatement pst = connection.prepareStatement(DELETE_USER_TASK_QUERY)) {
+        try (PreparedStatement pst = connection.prepareStatement(DELETE_USER_TASK_QUERY)) {
             pst.setLong(1, id);
             updated_rows = pst.executeUpdate();
-            transactionManager.commitSession();
         } catch (SQLException ex) {
             log.error(ex.getMessage(), ex);
-            transactionManager.rollbackSession();
             throw ex;
         }
+        log.info("Delete user task with id {} in {}",id,new Date());
         return updated_rows;
     }
 

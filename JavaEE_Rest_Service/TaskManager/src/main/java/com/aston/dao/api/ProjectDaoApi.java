@@ -2,7 +2,6 @@ package com.aston.dao.api;
 
 import com.aston.entities.Project;
 import com.aston.entities.User;
-import com.aston.util.TransactionManagerException;
 
 import java.sql.SQLException;
 import java.util.List;

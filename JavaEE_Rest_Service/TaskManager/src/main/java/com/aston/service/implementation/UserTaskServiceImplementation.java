@@ -2,11 +2,12 @@ package com.aston.service.implementation;
 
 import com.aston.dao.api.TransactionManager;
 import com.aston.dao.api.UserTaskDaoApi;
-import com.aston.entities.User;
+import com.aston.dao.datasource.ConnectionManager;
 import com.aston.entities.UserTask;
 import com.aston.service.api.TaskServiceApi;
 import com.aston.service.api.UserServiceApi;
 import com.aston.service.api.UserTaskServiceApi;
+import com.aston.util.TransactionException;
 import com.aston.util.dto.TaskDto;
 import com.aston.util.dto.UserDto;
 import com.aston.util.dto.UserTaskDto;
@@ -24,13 +25,16 @@ public class UserTaskServiceImplementation implements UserTaskServiceApi {
     private final UserTaskDaoApi userTaskDao;
     private final UserServiceApi userServiceApi;
     private final TaskServiceApi taskServiceApi;
-    private final TransactionManager transactionManager;
+    private TransactionManager transactionManager;
+    private final ConnectionManager connectionManager;
 
-    public UserTaskServiceImplementation(UserTaskDaoApi userTaskDao, UserServiceApi userServiceApi, TaskServiceApi taskServiceApi, TransactionManager transactionManager) {
+    public UserTaskServiceImplementation(UserTaskDaoApi userTaskDao, UserServiceApi userServiceApi, TaskServiceApi taskServiceApi,
+                                         ConnectionManager connectionManager) {
+        this.connectionManager = connectionManager;
         this.userTaskDao = userTaskDao;
         this.userServiceApi = userServiceApi;
         this.taskServiceApi = taskServiceApi;
-        this.transactionManager = transactionManager;
+        this.transactionManager = connectionManager.getTransactionManager();
     }
 
 
@@ -39,8 +43,11 @@ public class UserTaskServiceImplementation implements UserTaskServiceApi {
         UserTask userTaskEntity = fromDto(userTaskDtoSave);
         int userTaskId = 0;
         try {
+            transactionManager.beginTransaction();
             userTaskId = userTaskDao.createUserTask(userTaskEntity);
+            transactionManager.commitTransaction();
         } catch (SQLException e) {
+            transactionManager.rollbackTransaction();
             log.error("Cannot save user task get exception {}", e.getMessage());
             throw e;
         }
@@ -51,9 +58,9 @@ public class UserTaskServiceImplementation implements UserTaskServiceApi {
     public List<UserTaskFullDto> getAllUserTaskByUser(int userid) throws SQLException {
         List<UserTaskFullDto> userTaskByUserList = new ArrayList<>();
         try {
-            userTaskByUserList = userTaskDao.getAllUserTaskByUser(userid).stream().map(this::fromEntity)
+             userTaskByUserList = userTaskDao.getAllUserTaskByUser(userid).stream().map(this::fromEntity)
                     .collect(Collectors.toList());
-            setUserAndTaskByUserId(userid, userTaskByUserList);
+             setUserAndTaskByUserId(userid, userTaskByUserList);
         } catch (SQLException e) {
             log.error("Cannot get all user task by user with with exception {}",e.getMessage());
             e.printStackTrace();
@@ -67,7 +74,7 @@ public class UserTaskServiceImplementation implements UserTaskServiceApi {
     public List<UserTaskFullDto> getAllUsersTask() throws SQLException {
         List<UserTaskFullDto> userTaskByUserList = new ArrayList<>();
         try {
-            userTaskByUserList = userTaskDao.getAllUsersTask().stream().map(this::fromEntity)
+             userTaskByUserList = userTaskDao.getAllUsersTask().stream().map(this::fromEntity)
                     .collect(Collectors.toList());
             userTaskByUserList.forEach(o1->{
                 try {
@@ -77,8 +84,8 @@ public class UserTaskServiceImplementation implements UserTaskServiceApi {
                     e.printStackTrace();
                 }
             });
-        } catch (SQLException e) {
-            log.error("Cannot get all user task by user with with exception {}",e.getMessage());
+         } catch (SQLException e) {
+             log.error("Cannot get all user task by user with with exception {}",e.getMessage());
             e.printStackTrace();
         }
         return userTaskByUserList;
@@ -87,8 +94,11 @@ public class UserTaskServiceImplementation implements UserTaskServiceApi {
     @Override
     public int deleteUserTask(int id) throws SQLException {
         try {
+            transactionManager.beginTransaction();
             id = userTaskDao.deleteUserTask(id);
+            transactionManager.commitTransaction();
         } catch (SQLException e) {
+            transactionManager.rollbackTransaction();
             log.error("Cannot delete user task get exception {}", e.getMessage());
             throw e;
         }

@@ -2,6 +2,7 @@ package com.aston.service.implementation;
 
 import com.aston.dao.api.TaskDaoApi;
 import com.aston.dao.api.TransactionManager;
+import com.aston.dao.datasource.ConnectionManager;
 import com.aston.entities.Task;
 import com.aston.service.api.ProjectServiceApi;
 import com.aston.service.api.TaskServiceApi;
@@ -17,22 +18,27 @@ import java.util.stream.Collectors;
 public class TaskServiceImplementation implements TaskServiceApi {
 
     private final TaskDaoApi taskDao;
-    private final TransactionManager transactionManager;
+    private TransactionManager transactionManager;
     private final ProjectServiceApi projectService;
+    private final ConnectionManager connectionManager;
 
-    public TaskServiceImplementation(TaskDaoApi taskDao, TransactionManager transactionManager, ProjectServiceApi projectService) {
+    public TaskServiceImplementation(TaskDaoApi taskDao, ProjectServiceApi projectService, ConnectionManager connectionManager) {
+        this.connectionManager = connectionManager;
+        this.transactionManager = connectionManager.getTransactionManager();
         this.taskDao = taskDao;
-        this.transactionManager = transactionManager;
         this.projectService = projectService;
-    }
+     }
 
     @Override
     public int createTask(TaskDto taskDtoSave) throws SQLException {
         Task taskEntity = fromDto(taskDtoSave);
         int taskId = 0;
         try {
+            transactionManager.beginTransaction();
             taskId = taskDao.createTask(taskEntity);
+            transactionManager.commitTransaction();
         } catch (SQLException e) {
+            transactionManager.rollbackTransaction();
             log.error("Cannot save task get exception {}", e.getMessage());
             throw e;
         }
@@ -47,6 +53,7 @@ public class TaskServiceImplementation implements TaskServiceApi {
             taskDto = fromEntity(taskById);
             taskDto.setProject(projectService.getProjectById(taskById.getProjectId()));
         } catch (SQLException e) {
+
             log.error("Cannot get project by id with exception {}", e.getMessage());
             throw e;
         }
@@ -67,6 +74,7 @@ public class TaskServiceImplementation implements TaskServiceApi {
                 }
             });
         } catch (SQLException e) {
+
             log.error("Cannot get all task with exception {}",e.getMessage());
             e.printStackTrace();
         }
@@ -77,10 +85,13 @@ public class TaskServiceImplementation implements TaskServiceApi {
     public List<TaskDto> getAllTasksByProject(int projectId) throws SQLException {
         List<TaskDto> taskDtoListByProject = new ArrayList<>();
         try {
+            transactionManager.beginTransaction();
             taskDtoListByProject = taskDao.getAllTasksByProject(projectId).stream().map(this::fromEntity)
                     .collect(Collectors.toList());
             setProjectDto(taskDtoListByProject);
+            transactionManager.commitTransaction();
         } catch (SQLException e) {
+            transactionManager.rollbackTransaction();
             log.error("Cannot get all task by project with with exception {}",e.getMessage());
             e.printStackTrace();
         }
@@ -94,8 +105,11 @@ public class TaskServiceImplementation implements TaskServiceApi {
         Task taskEntity = fromDto(taskDtoUpdate);
         int taskId = 0;
         try {
+            transactionManager.beginTransaction();
             taskId = taskDao.updateTask(taskEntity);
+            transactionManager.commitTransaction();
         } catch (SQLException e) {
+            transactionManager.rollbackTransaction();
             log.error("Cannot update task get exception {}", e.getMessage());
             throw e;
         }
@@ -105,8 +119,11 @@ public class TaskServiceImplementation implements TaskServiceApi {
     @Override
     public int deleteTask(int taskId) throws SQLException {
         try {
+            transactionManager.beginTransaction();
             taskId = taskDao.deleteTask(taskId);
+            transactionManager.commitTransaction();
         } catch (SQLException e) {
+            transactionManager.rollbackTransaction();
             log.error("Cannot delete task get exception {}", e.getMessage());
             throw e;
         }

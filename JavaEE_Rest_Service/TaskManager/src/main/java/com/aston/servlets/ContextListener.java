@@ -1,7 +1,9 @@
 package com.aston.servlets;
 
 import com.aston.dao.api.*;
-import com.aston.dao.datasource.HikariPostgreSQLConfig;
+import com.aston.dao.datasource.ConnectionManager;
+import com.aston.dao.datasource.ConnectionPoolImpl;
+import com.aston.dao.datasource.TransactionManagerImpl;
 import com.aston.dao.implementation.*;
 import com.aston.service.api.ProjectServiceApi;
 import com.aston.service.api.TaskServiceApi;
@@ -11,16 +13,20 @@ import com.aston.service.implementation.ProjectServiceImplementation;
 import com.aston.service.implementation.TaskServiceImplementation;
 import com.aston.service.implementation.UserServiceImplementation;
 import com.aston.service.implementation.UserTaskServiceImplementation;
+import com.aston.util.ConnectionPoolException;
+import lombok.extern.slf4j.Slf4j;
 
 import javax.servlet.ServletContext;
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
 import javax.servlet.annotation.WebListener;
-import javax.sql.DataSource;
 
 @WebListener
+@Slf4j
 public class ContextListener implements ServletContextListener {
-
+    private static final String APP_CONTEXT_INIT_MESSAGE = "ApplicationContext was initialized. ";
+    private static final String CONNECTION_POOL_DESTROY_ERROR = "Cannot destroy connection pool. ";
+    private static final String CONNECTION_POOL_INITIALIZATION_ERROR = "Connection pool initialization error. ";
     private UserDaoApi userDaoApi;
     private TaskDaoApi taskDaoApi;
     private ProjectDaoApi projectDaoApi;
@@ -31,20 +37,31 @@ public class ContextListener implements ServletContextListener {
     private UserTaskServiceApi userTaskServiceApi;
     @Override
     public void contextInitialized(ServletContextEvent servletContextEvent) {
+        ConnectionPool connectionPool = ConnectionPoolImpl.getInstance();
+        try {
+            connectionPool.init("database");
+        } catch (ConnectionPoolException e) {
+            log.error(CONNECTION_POOL_INITIALIZATION_ERROR, e);
+            e.printStackTrace();
+        }
+        TransactionManager transactionManager = new TransactionManagerImpl(connectionPool);
+        ConnectionManager connectionManager = new ConnectionManager(transactionManager);
+
         final ServletContext servletContext =
                 servletContextEvent.getServletContext();
 
-        DataSource dataSource = HikariPostgreSQLConfig.getHikariDataSource();
-        TransactionManager transactionManager = new TransactionManagerImplementation(dataSource);;
 
-        this.userDaoApi = new UserDaoImplementation(transactionManager);
-        this.taskDaoApi = new TaskDaoImplementation(transactionManager);
-        this.projectDaoApi = new ProjectDaoImplementation(transactionManager);
-        this.userTaskDaoApi = new UserTaskImplementation(transactionManager);
-        this.userServiceApi = new UserServiceImplementation(userDaoApi,transactionManager);
-        this.projectServiceApi = new ProjectServiceImplementation(projectDaoApi,transactionManager);
-        this.taskServiceApi = new TaskServiceImplementation(taskDaoApi,transactionManager,projectServiceApi);
-        this.userTaskServiceApi = new UserTaskServiceImplementation(userTaskDaoApi,userServiceApi,taskServiceApi,transactionManager);
+        this.userDaoApi = new UserDaoImplementation(connectionManager);
+        this.taskDaoApi = new TaskDaoImplementation(connectionManager);
+        this.projectDaoApi = new ProjectDaoImplementation(connectionManager);
+        this.userTaskDaoApi = new UserTaskImplementation(connectionManager);
+        this.userServiceApi = new UserServiceImplementation(userDaoApi,connectionManager);
+        this.projectServiceApi = new ProjectServiceImplementation(projectDaoApi, connectionManager,taskDaoApi,userTaskDaoApi);
+
+        this.taskServiceApi = new TaskServiceImplementation(taskDaoApi,new ProjectServiceImplementation(new ProjectDaoImplementation(connectionManager), connectionManager,new TaskDaoImplementation(connectionManager)
+                ,new UserTaskImplementation(connectionManager)),connectionManager);
+
+        this.userTaskServiceApi = new UserTaskServiceImplementation(userTaskDaoApi,userServiceApi,taskServiceApi, connectionManager);
 
         servletContext.setAttribute("userService",userServiceApi);
         servletContext.setAttribute("userDao", userDaoApi);

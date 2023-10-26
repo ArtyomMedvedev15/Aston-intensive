@@ -1,11 +1,14 @@
 package com.aston.service.implementation;
 
 import com.aston.dao.api.ProjectDaoApi;
+import com.aston.dao.api.TaskDaoApi;
 import com.aston.dao.api.TransactionManager;
+import com.aston.dao.api.UserTaskDaoApi;
+import com.aston.dao.datasource.ConnectionManager;
 import com.aston.entities.Project;
+import com.aston.entities.Task;
 import com.aston.service.api.ProjectServiceApi;
 import com.aston.util.dto.ProjectDto;
-import com.aston.util.dto.UserDto;
 import lombok.extern.slf4j.Slf4j;
 
 import java.sql.SQLException;
@@ -17,11 +20,17 @@ import java.util.stream.Collectors;
 public class ProjectServiceImplementation implements ProjectServiceApi {
 
     private final ProjectDaoApi projectDaoApi;
-    private final TransactionManager transactionManager;
+    private TransactionManager transactionManager;
+    private final ConnectionManager connectionManager;
 
-    public ProjectServiceImplementation(ProjectDaoApi projectDaoApi, TransactionManager transactionManager) {
+    private final TaskDaoApi taskDaoApi;
+    private final UserTaskDaoApi userTaskDaoApi;
+    public ProjectServiceImplementation(ProjectDaoApi projectDaoApi, ConnectionManager connectionManager, TaskDaoApi taskDaoApi, UserTaskDaoApi userTaskDaoApi) {
+        this.connectionManager = connectionManager;
+        this.transactionManager = connectionManager.getTransactionManager();
         this.projectDaoApi = projectDaoApi;
-        this.transactionManager = transactionManager;
+        this.taskDaoApi = taskDaoApi;
+        this.userTaskDaoApi = userTaskDaoApi;
     }
 
     @Override
@@ -29,8 +38,11 @@ public class ProjectServiceImplementation implements ProjectServiceApi {
         Project projectEntity = fromDto(projectDtoSave);
         int projectId = 0;
         try {
+            transactionManager.beginTransaction();
             projectId = projectDaoApi.createProject(projectEntity);
+            transactionManager.commitTransaction();
         } catch (SQLException e) {
+            transactionManager.rollbackTransaction();
             log.error("Cannot save project get exception {}", e.getMessage());
             throw e;
         }
@@ -42,8 +54,11 @@ public class ProjectServiceImplementation implements ProjectServiceApi {
         Project projectEntity = fromDto(projectDtoSave);
         int projectId = 0;
         try {
+            transactionManager.beginTransaction();
             projectId = projectDaoApi.updateProject(projectEntity);
+            transactionManager.commitTransaction();
         } catch (SQLException e) {
+            transactionManager.rollbackTransaction();
             log.error("Cannot update project get exception {}", e.getMessage());
             throw e;
         }
@@ -53,8 +68,11 @@ public class ProjectServiceImplementation implements ProjectServiceApi {
     @Override
     public int deleteProject(int projectId) throws SQLException {
         try {
+            transactionManager.beginTransaction();
             projectId = projectDaoApi.deleteProject(projectId);
+            transactionManager.commitTransaction();
         } catch (SQLException e) {
+            transactionManager.rollbackTransaction();
             log.error("Cannot delete project get exception {}", e.getMessage());
             throw e;
         }
@@ -64,8 +82,11 @@ public class ProjectServiceImplementation implements ProjectServiceApi {
     public ProjectDto getProjectById(int projectId) throws SQLException {
         ProjectDto projectDto;
         try {
+            transactionManager.beginTransaction();
             projectDto = fromEntity(projectDaoApi.getProjectById(projectId));
+            transactionManager.commitTransaction();
         } catch (SQLException e) {
+            transactionManager.rollbackTransaction();
             log.error("Cannot get project by id with exception {}",e.getMessage());
             throw e;
         }
@@ -76,6 +97,7 @@ public class ProjectServiceImplementation implements ProjectServiceApi {
     public List<ProjectDto> getProjectByName(String name) throws SQLException {
         List<ProjectDto> projectDtoList = new ArrayList<>();
         try {
+            transactionManager.beginTransaction();
             if(!name.equals("")) {
                 projectDtoList = projectDaoApi.getProjectByName(name).stream().map(this::fromEntity)
                         .collect(Collectors.toList());
@@ -83,7 +105,9 @@ public class ProjectServiceImplementation implements ProjectServiceApi {
                 projectDtoList = projectDaoApi.getAllProject().stream().map(this::fromEntity)
                         .collect(Collectors.toList());
             }
+            transactionManager.commitTransaction();
         } catch (SQLException e) {
+            transactionManager.rollbackTransaction();
             log.error("Cannot get all project by name with exception {}",e.getMessage());
             e.printStackTrace();
         }
@@ -94,9 +118,12 @@ public class ProjectServiceImplementation implements ProjectServiceApi {
     public List<ProjectDto> getAllProject() throws SQLException {
         List<ProjectDto> projectDtoList;
         try {
+            transactionManager.beginTransaction();
             projectDtoList = projectDaoApi.getAllProject().stream().map(this::fromEntity)
                     .collect(Collectors.toList());
+            transactionManager.commitTransaction();
         } catch (SQLException e) {
+            transactionManager.rollbackTransaction();
             log.error("Cannot get all project with exception {}",e.getMessage());
             throw e;
         }
