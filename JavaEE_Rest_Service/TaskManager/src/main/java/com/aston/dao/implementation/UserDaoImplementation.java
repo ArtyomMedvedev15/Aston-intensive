@@ -35,20 +35,59 @@ public class UserDaoImplementation implements UserDaoApi {
             pst.setString(1, user.getUsername());
             pst.setString(2, user.getEmail());
             pst.executeUpdate();
+            transactionManager.commitSession();
             try (ResultSet rs = pst.getGeneratedKeys()) {
                 rs.next();
                 int id = rs.getInt(1);
-                transactionManager.commitSession();
                 return id;
             }
-
+        } catch (SQLException ex) {
+            transactionManager.rollbackSession();
+            log.error(ex.getMessage(), ex);
+            throw ex;
+        }finally {
+            transactionManager.close();
+        }
+    }
+    @Override
+    public int updateUser(User user) throws SQLException {
+        int rowsUpdated = 0;
+        transactionManager.beginSession();
+        try (Connection connection = transactionManager.getCurrentSession();
+             PreparedStatement pst = connection.prepareStatement(UPDATE_USER_QUERY)) {
+            pst.setString(2, user.getUsername());
+            pst.setString(1, user.getEmail());
+            pst.setLong(3, user.getId());
+            rowsUpdated = pst.executeUpdate();
+            transactionManager.commitSession();
         } catch (SQLException ex) {
             log.error(ex.getMessage(), ex);
             transactionManager.rollbackSession();
             throw ex;
+        }finally {
+            transactionManager.close();
         }
+        return rowsUpdated;
     }
 
+    @Override
+    public int deleteUser(int userId) throws SQLException {
+        int updated_rows;
+        transactionManager.beginSession();
+        try (Connection connection = transactionManager.getCurrentSession();
+             PreparedStatement pst = connection.prepareStatement(DELETE_USER_QUERY)) {
+            pst.setLong(1, userId);
+            updated_rows = pst.executeUpdate();
+            transactionManager.commitSession();
+        } catch (SQLException ex) {
+            log.error(ex.getMessage(), ex);
+            transactionManager.rollbackSession();
+            throw ex;
+        }finally {
+            transactionManager.close();
+        }
+        return updated_rows;
+    }
     @Override
     public User getUserById(int userId) throws SQLException {
         User dbUser = null;
@@ -108,45 +147,10 @@ public class UserDaoImplementation implements UserDaoApi {
         return usersList;
     }
 
-    @Override
-    public int updateUser(User user) throws SQLException {
-        int rowsUpdated = 0;
-        transactionManager.beginSession();
-        try (Connection connection = transactionManager.getCurrentSession();
-             PreparedStatement pst = connection.prepareStatement(UPDATE_USER_QUERY)) {
-            pst.setString(1, user.getUsername());
-            pst.setString(2, user.getEmail());
-            pst.setLong(3, user.getId());
-            rowsUpdated = pst.executeUpdate();
-            transactionManager.commitSession();
 
-        } catch (SQLException ex) {
-            log.error(ex.getMessage(), ex);
-            transactionManager.rollbackSession();
-            throw ex;
-        }
-        return rowsUpdated;
-    }
-
-    @Override
-    public int deleteUser(int userId) throws SQLException {
-        int updated_rows;
-        transactionManager.beginSession();
-        try (Connection connection = transactionManager.getCurrentSession();
-            PreparedStatement pst = connection.prepareStatement(DELETE_USER_QUERY)) {
-            pst.setLong(1, userId);
-            updated_rows = pst.executeUpdate();
-            transactionManager.commitSession();
-        } catch (SQLException ex) {
-            log.error(ex.getMessage(), ex);
-            transactionManager.rollbackSession();
-            throw ex;
-        }
-        return updated_rows;
-    }
 
     private User parseUserFromResultSet(ResultSet rs) throws SQLException {
-        User userMapper = new User();
+        User userMapper = User.builder().build();
         userMapper.setId((long) Integer.parseInt(rs.getString("id")));
         userMapper.setUsername(rs.getString("username"));
         userMapper.setEmail(rs.getString("email"));

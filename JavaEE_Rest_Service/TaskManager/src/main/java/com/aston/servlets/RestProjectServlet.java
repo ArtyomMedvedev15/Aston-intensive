@@ -23,7 +23,7 @@ public class RestProjectServlet extends HttpServlet {
     @Override
     public void init(){
         final Object taskDao = getServletContext().getAttribute("projectDao");
-        this.projectDao = (ProjectDaoImplementation) taskDao;
+        this.projectDao = (ProjectDaoApi) taskDao;
     }
 
     @Override

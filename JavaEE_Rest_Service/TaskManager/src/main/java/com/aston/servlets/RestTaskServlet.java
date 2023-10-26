@@ -26,7 +26,7 @@ public class RestTaskServlet extends HttpServlet {
     @Override
     public void init(){
         final Object taskDao = getServletContext().getAttribute("taskDao");
-        this.taskDao = (TaskDaoImplementation) taskDao;
+        this.taskDao = (TaskDaoApi) taskDao;
     }
 
     @Override

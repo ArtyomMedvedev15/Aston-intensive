@@ -27,15 +27,10 @@ public class HikariPostgreSQLConfig {
         config.setConnectionTimeout(15000); //ms
         config.setIdleTimeout(60000); //ms
         config.setMaxLifetime(600000);//ms
-        config.setAutoCommit(false);
         config.setMinimumIdle(5);
         config.setMaximumPoolSize(10);
         config.setPoolName("postgresDBPool");
         config.setRegisterMbeans(true);
-        config.addDataSourceProperty("cachePrepStmts", "true");
-        config.addDataSourceProperty("prepStmtCacheSize", "250");
-        config.addDataSourceProperty("prepStmtCacheSqlLimit", "2048");
-
         dataSource = new HikariDataSource(config);
     }
 

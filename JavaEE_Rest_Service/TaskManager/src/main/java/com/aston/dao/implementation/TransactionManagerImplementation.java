@@ -24,6 +24,7 @@ public class TransactionManagerImplementation implements TransactionManager {
     public void beginSession() throws TransactionManagerException {
         try {
             connection = dataSource.getConnection();
+            connection.setAutoCommit(false);
         } catch (SQLException e) {
             throw new TransactionManagerException(e.getMessage());
         }
@@ -33,6 +34,7 @@ public class TransactionManagerImplementation implements TransactionManager {
     public void commitSession() throws TransactionManagerException {
         try {
             connection.commit();
+            connection.setAutoCommit(true);
         } catch (SQLException e) {
             throw new TransactionManagerException(e.getMessage());
         }
@@ -49,6 +51,7 @@ public class TransactionManagerImplementation implements TransactionManager {
 
     @Override
     public void close() throws SQLException {
+        connection.setAutoCommit(false);
         connection.close();
     }
 
