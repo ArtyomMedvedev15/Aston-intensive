@@ -33,8 +33,7 @@ public class RestGetTaskByIdServlet extends HttpServlet {
         String taskId = req.getParameter("idTask");
         try {
             TaskDto taskById = taskServiceApi.getTaskById(Integer.parseInt(taskId));
-            System.out.println("TASK "+taskById);
-            ObjectMapper objectMapper = new ObjectMapper();
+             ObjectMapper objectMapper = new ObjectMapper();
             String taskByIdJson = objectMapper.writeValueAsString(taskById);
 
             resp.setContentType("application/json");

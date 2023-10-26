@@ -102,7 +102,7 @@ public class UserTaskImplementation implements UserTaskDaoApi {
     }
 
     private UserTask parseUserTaskFromResultSet(ResultSet rs) throws SQLException {
-        UserTask userTaskMapper = new UserTask();
+        UserTask userTaskMapper = UserTask.builder().build();
         userTaskMapper.setId(Integer.parseInt(rs.getString("id")));
         userTaskMapper.setUserId(rs.getInt("userid"));
         userTaskMapper.setTaskId(rs.getInt("taskid"));

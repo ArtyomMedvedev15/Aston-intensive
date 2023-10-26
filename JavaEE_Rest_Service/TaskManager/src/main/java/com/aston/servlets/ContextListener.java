@@ -6,9 +6,11 @@ import com.aston.dao.implementation.*;
 import com.aston.service.api.ProjectServiceApi;
 import com.aston.service.api.TaskServiceApi;
 import com.aston.service.api.UserServiceApi;
+import com.aston.service.api.UserTaskServiceApi;
 import com.aston.service.implementation.ProjectServiceImplementation;
 import com.aston.service.implementation.TaskServiceImplementation;
 import com.aston.service.implementation.UserServiceImplementation;
+import com.aston.service.implementation.UserTaskServiceImplementation;
 
 import javax.servlet.ServletContext;
 import javax.servlet.ServletContextEvent;
@@ -26,7 +28,7 @@ public class ContextListener implements ServletContextListener {
     private UserServiceApi userServiceApi;
     private ProjectServiceApi projectServiceApi;
     private TaskServiceApi taskServiceApi;
-
+    private UserTaskServiceApi userTaskServiceApi;
     @Override
     public void contextInitialized(ServletContextEvent servletContextEvent) {
         final ServletContext servletContext =
@@ -42,7 +44,7 @@ public class ContextListener implements ServletContextListener {
         this.userServiceApi = new UserServiceImplementation(userDaoApi,transactionManager);
         this.projectServiceApi = new ProjectServiceImplementation(projectDaoApi,transactionManager);
         this.taskServiceApi = new TaskServiceImplementation(taskDaoApi,transactionManager,projectServiceApi);
-
+        this.userTaskServiceApi = new UserTaskServiceImplementation(userTaskDaoApi,userServiceApi,taskServiceApi,transactionManager);
 
         servletContext.setAttribute("userService",userServiceApi);
         servletContext.setAttribute("userDao", userDaoApi);
@@ -54,6 +56,7 @@ public class ContextListener implements ServletContextListener {
         servletContext.setAttribute("projectDao", projectDaoApi);
 
         servletContext.setAttribute("userTaskDao", userTaskDaoApi);
+        servletContext.setAttribute("userTaskService",userTaskServiceApi);
 
     }
 
