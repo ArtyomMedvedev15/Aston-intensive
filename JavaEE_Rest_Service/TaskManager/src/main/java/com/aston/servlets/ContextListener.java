@@ -15,6 +15,7 @@ import com.aston.service.implementation.UserServiceImplementation;
 import com.aston.service.implementation.UserTaskServiceImplementation;
 import com.aston.util.ConnectionPoolException;
 import lombok.extern.slf4j.Slf4j;
+import org.flywaydb.core.Flyway;
 
 import javax.servlet.ServletContext;
 import javax.servlet.ServletContextEvent;
@@ -37,6 +38,8 @@ public class ContextListener implements ServletContextListener {
     private UserTaskServiceApi userTaskServiceApi;
     @Override
     public void contextInitialized(ServletContextEvent servletContextEvent) {
+
+
         ConnectionPool connectionPool = ConnectionPoolImpl.getInstance();
         try {
             connectionPool.init("database");
@@ -46,6 +49,12 @@ public class ContextListener implements ServletContextListener {
         }
         TransactionManager transactionManager = new TransactionManagerImpl(connectionPool);
         ConnectionManager connectionManager = new ConnectionManager(transactionManager);
+
+        Flyway flyway = Flyway.configure()
+                .dataSource("jdbc:postgresql://localhost:5432/postgres", "postgres", "postgres")
+                .locations("classpath:db/migration") // Расположение SQL-скриптов миграции
+                .load();
+        flyway.migrate();
 
         final ServletContext servletContext =
                 servletContextEvent.getServletContext();

@@ -13,10 +13,10 @@ import java.util.List;
 @Slf4j
 public class UserTaskImplementation implements UserTaskDaoApi {
 
-    private static final String INSERT_USER_TASK_QUERY = "INSERT INTO usertask(userid,taskid) VALUES(?,?)";
-    private static final String DELETE_USER_TASK_QUERY = "DELETE FROM usertask WHERE id = ?";
-    private static final String SELECT_USER_TASK_BY_USER_QUERY = "SELECT * FROM usertask WHERE userid = ?";
-    private static final String SELECT_ALL_USER_TASK_QUERY = "SELECT * FROM usertask";
+    private static final String INSERT_USER_TASK_QUERY = "INSERT INTO taskmaneger.usertask(userid,taskid) VALUES(?,?)";
+    private static final String DELETE_USER_TASK_QUERY = "DELETE FROM taskmaneger.usertask WHERE id = ?";
+    private static final String SELECT_USER_TASK_BY_USER_QUERY = "SELECT * FROM taskmaneger.usertask WHERE userid = ?";
+    private static final String SELECT_ALL_USER_TASK_QUERY = "SELECT * FROM taskmaneger.usertask";
 
     private final ConnectionManager connectionManager;
 

@@ -12,12 +12,12 @@ import java.util.List;
 
 @Slf4j
 public class UserDaoImplementation implements UserDaoApi {
-    private static final String INSERT_USER_QUERY = "INSERT INTO users(username,email)VALUES(?,?)";
-    private static final String SELECT_USER_BY_ID_QUERY = "SELECT * FROM users WHERE id=?";
-    private static final String SELECT_USER_BY_USERNAME_QUERY= "SELECT * FROM users WHERE username=?";
-    private static final String UPDATE_USER_QUERY = "UPDATE users SET email=?, username=? WHERE id=?";
-    private static final String SELECT_ALL_USERS_QUERY = "SELECT * FROM users";
-    private static final String DELETE_USER_QUERY = "DELETE FROM users WHERE id=?";
+    private static final String INSERT_USER_QUERY = "INSERT INTO taskmaneger.users(username,email)VALUES(?,?)";
+    private static final String SELECT_USER_BY_ID_QUERY = "SELECT * FROM taskmaneger.users WHERE id=?";
+    private static final String SELECT_USER_BY_USERNAME_QUERY= "SELECT * FROM taskmaneger.users WHERE username=?";
+    private static final String UPDATE_USER_QUERY = "UPDATE taskmaneger.users SET email=?, username=? WHERE id=?";
+    private static final String SELECT_ALL_USERS_QUERY = "SELECT * FROM taskmaneger.users";
+    private static final String DELETE_USER_QUERY = "DELETE FROM taskmaneger.users WHERE id=?";
 
      private final ConnectionManager connectionManager;
 

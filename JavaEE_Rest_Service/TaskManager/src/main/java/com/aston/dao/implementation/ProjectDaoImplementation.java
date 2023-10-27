@@ -15,12 +15,12 @@ import java.util.List;
 @Slf4j
 public class ProjectDaoImplementation implements ProjectDaoApi {
 
-    private final static String INSERT_PROJECT_QUERY = "INSERT INTO project(name,description)VALUES(?,?)";
-    private final static String SELECT_PROJECT_BY_ID_QUERY = "SELECT * FROM project WHERE id = ?";
-    private final static String SELECT_PROJECT_BY_NAME_QUERY ="SELECT *FROM project WHERE name LIKE ?";
-    private final static String SELECT_ALL_PROJECT_QUERY = "SELECT * FROM project";
-    private final static String UPDATE_PROJECT_QUERY = "UPDATE project SET name=?, description=? WHERE id=?";
-    private final static String DELETE_PROJECT_QUERY = "DELETE FROM project WHERE id = ?";
+    private final static String INSERT_PROJECT_QUERY = "INSERT INTO taskmaneger.project(name,description)VALUES(?,?)";
+    private final static String SELECT_PROJECT_BY_ID_QUERY = "SELECT * FROM taskmaneger.project WHERE id = ?";
+    private final static String SELECT_PROJECT_BY_NAME_QUERY ="SELECT *FROM taskmaneger.project WHERE name LIKE ?";
+    private final static String SELECT_ALL_PROJECT_QUERY = "SELECT * FROM taskmaneger.project";
+    private final static String UPDATE_PROJECT_QUERY = "UPDATE taskmaneger.project SET name=?, description=? WHERE id=?";
+    private final static String DELETE_PROJECT_QUERY = "DELETE FROM taskmaneger.project WHERE id = ?";
 
      private final ConnectionManager connectionManager;
 

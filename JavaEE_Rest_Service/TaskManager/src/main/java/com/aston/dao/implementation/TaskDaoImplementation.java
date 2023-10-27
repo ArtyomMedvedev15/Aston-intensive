@@ -13,12 +13,12 @@ import java.util.List;
 @Slf4j
 public class TaskDaoImplementation implements TaskDaoApi {
 
-    private static final String INSERT_TASK_QUERY = "INSERT INTO task(title,description,deadline,status,projectId) VALUES(?,?,?,?,?)";
-    private static final String SELECT_TASK_BY_ID_QUERY = "SELECT * FROM task WHERE id = ?";
-    private static final String SELECT_TASK_BY_PROJECT_ID_QUERY = "SELECT * FROM Task WHERE projectId=?";
-    private static final String SELECT_ALL_TASK_QUERY = "SELECT * FROM task";
-    private static final String UPDATE_TASK_QUERY = "UPDATE task SET title=?,description=?,deadline=?,status=?,projectId=? WHERE id=?";
-    private static final String DELETE_TASK_QUERY = "DELETE FROM task WHERE id=?";
+    private static final String INSERT_TASK_QUERY = "INSERT INTO taskmaneger.task(title,description,deadline,status,projectId) VALUES(?,?,?,?,?)";
+    private static final String SELECT_TASK_BY_ID_QUERY = "SELECT * FROM taskmaneger.task WHERE id = ?";
+    private static final String SELECT_TASK_BY_PROJECT_ID_QUERY = "SELECT * FROM taskmaneger.task WHERE projectId=?";
+    private static final String SELECT_ALL_TASK_QUERY = "SELECT * FROM taskmaneger.task";
+    private static final String UPDATE_TASK_QUERY = "UPDATE taskmaneger.task SET title=?,description=?,deadline=?,status=?,projectId=? WHERE id=?";
+    private static final String DELETE_TASK_QUERY = "DELETE FROM taskmaneger.task WHERE id=?";
 
     private final ConnectionManager connectionManager;
     public TaskDaoImplementation(ConnectionManager connectionManager) {
