@@ -2,6 +2,7 @@ package com.aston.servlets.users;
 
 import com.aston.service.api.UserServiceApi;
 import com.aston.service.implementation.UserServiceImplementation;
+import com.aston.util.UserNotFoundException;
 import com.aston.util.dto.UserDto;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
@@ -41,7 +42,11 @@ public class RestGetUserByUsernameServlet extends HttpServlet {
             resp.getWriter().write(userByIdJson);
 
         } catch (SQLException e) {
-            resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            PrintWriter out = resp.getWriter();
+            out.println(String.format("Cannot get by username user get error with server in %s", new Date()));
+        } catch (UserNotFoundException e) {
+            resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
             PrintWriter out = resp.getWriter();
             out.println(String.format("Cannot get by username user get error %s in %s", e.getMessage(), new Date()));
         }

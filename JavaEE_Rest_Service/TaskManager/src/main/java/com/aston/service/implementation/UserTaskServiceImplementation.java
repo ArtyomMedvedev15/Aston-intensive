@@ -8,6 +8,7 @@ import com.aston.service.api.TaskServiceApi;
 import com.aston.service.api.UserServiceApi;
 import com.aston.service.api.UserTaskServiceApi;
 import com.aston.util.TransactionException;
+import com.aston.util.UserNotFoundException;
 import com.aston.util.dto.TaskDto;
 import com.aston.util.dto.UserDto;
 import com.aston.util.dto.UserTaskDto;
@@ -80,7 +81,7 @@ public class UserTaskServiceImplementation implements UserTaskServiceApi {
                 try {
                     o1.setTaskId(taskServiceApi.getTaskById(Math.toIntExact(o1.getTaskId().getId())));
                     o1.setUserId(userServiceApi.getUserById(Math.toIntExact(o1.getUserId().getId())));
-                } catch (SQLException e) {
+                } catch (SQLException | UserNotFoundException e) {
                     e.printStackTrace();
                 }
             });
@@ -118,7 +119,7 @@ public class UserTaskServiceImplementation implements UserTaskServiceApi {
             try {
                 o1.setUserId(userServiceApi.getUserById(userid));
                 o1.setTaskId(taskServiceApi.getTaskById(Math.toIntExact(o1.getTaskId().getId())));
-            } catch (SQLException e) {
+            } catch (SQLException | UserNotFoundException e) {
                 e.printStackTrace();
             }
         });

@@ -4,6 +4,7 @@ import com.aston.dao.api.UserDaoApi;
 import com.aston.dao.implementation.UserDaoImplementation;
 import com.aston.service.api.UserServiceApi;
 import com.aston.service.implementation.UserServiceImplementation;
+import com.aston.util.UserInvalidParameter;
 import com.aston.util.dto.UserDto;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -79,6 +80,10 @@ public class RestUserServlet extends HttpServlet {
         } catch (SQLException e) {
             resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
             PrintWriter out = resp.getWriter();
+            out.println(String.format("Cannot save new user get error with server in %s", new Date()));
+        } catch (UserInvalidParameter e) {
+            resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            PrintWriter out = resp.getWriter();
             out.println(String.format("Cannot save new user get error %s in %s", e.getMessage(), new Date()));
         }
     }
@@ -112,8 +117,12 @@ public class RestUserServlet extends HttpServlet {
         } catch (SQLException e) {
             resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
             PrintWriter out = resp.getWriter();
-            out.println(String.format("Cannot update user get error %s in %s", e.getMessage(), new Date()));
-        }
+            out.println(String.format("Cannot save new user get error with server in %s", new Date()));
+        } catch (UserInvalidParameter e) {
+             resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+             PrintWriter out = resp.getWriter();
+             out.println(String.format("Cannot save new user get error %s in %s", e.getMessage(), new Date()));
+         }
     }
 
     @Override

@@ -11,7 +11,7 @@ import java.util.Date;
 import java.util.List;
 
 @Slf4j
-public class UserTaskImplementation implements UserTaskDaoApi {
+public class UserTaskDaoImplementation implements UserTaskDaoApi {
 
     private static final String INSERT_USER_TASK_QUERY = "INSERT INTO taskmaneger.usertask(userid,taskid) VALUES(?,?)";
     private static final String DELETE_USER_TASK_QUERY = "DELETE FROM taskmaneger.usertask WHERE id = ?";
@@ -21,7 +21,7 @@ public class UserTaskImplementation implements UserTaskDaoApi {
     private final ConnectionManager connectionManager;
 
 
-    public UserTaskImplementation(ConnectionManager connectionManager) {
+    public UserTaskDaoImplementation(ConnectionManager connectionManager) {
 
         this.connectionManager = connectionManager;
     }

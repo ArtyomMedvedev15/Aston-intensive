@@ -6,6 +6,8 @@ import com.aston.dao.datasource.ConnectionManager;
 import com.aston.entities.User;
 import com.aston.service.api.UserServiceApi;
 import com.aston.util.TransactionException;
+import com.aston.util.UserInvalidParameter;
+import com.aston.util.UserNotFoundException;
 import com.aston.util.dto.UserDto;
 import lombok.extern.slf4j.Slf4j;
 
@@ -27,11 +29,12 @@ public class UserServiceImplementation implements UserServiceApi {
     }
 
     @Override
-    public int createUser(UserDto userSaveDto) throws SQLException {
-        User userEntity = fromDto(userSaveDto);
+    public int createUser(UserDto userSaveDto) throws SQLException, UserInvalidParameter {
+        User userEntity;
+        userEntity = ValidateUserDto(userSaveDto);
         int userId = 0;
         try {
-            transactionManager.beginTransaction();
+             transactionManager.beginTransaction();
              userId = userDaoApi.createUser(userEntity);
              transactionManager.commitTransaction();
          } catch (SQLException e) {
@@ -41,9 +44,22 @@ public class UserServiceImplementation implements UserServiceApi {
          }
         return userId;
     }
+
+    private User ValidateUserDto(UserDto userSaveDto) throws UserInvalidParameter {
+        User userEntity;
+        if((userSaveDto.getUsername().length()>0 && userSaveDto.getUsername().length()<256)
+                && userSaveDto.getEmail().length()>0 && userSaveDto.getEmail().length()<256){
+            userEntity = fromDto(userSaveDto);
+        }else{
+            throw new UserInvalidParameter("Username or email invalid, try yet");
+        }
+        return userEntity;
+    }
+
     @Override
-    public int updateUser(UserDto userUpdate) throws SQLException {
-        User userEntity = fromDto(userUpdate);
+    public int updateUser(UserDto userUpdate) throws SQLException, UserInvalidParameter {
+        User userEntity;
+        userEntity = ValidateUserDto(userUpdate);
         int userId = 0;
         try {
             transactionManager.beginTransaction();
@@ -58,11 +74,16 @@ public class UserServiceImplementation implements UserServiceApi {
     }
 
     @Override
-    public int deleteUser(int userId) throws SQLException {
+    public int deleteUser(int userId) throws SQLException, UserNotFoundException {
+        UserDto userDto;
         try {
             transactionManager.beginTransaction();
-            userId = userDaoApi.deleteUser(userId);
-            transactionManager.commitTransaction();
+            User userEntity = userDaoApi.getUserById(userId);
+            if(userEntity!=null){
+                userId = userDaoApi.deleteUser(userId);
+            }else{
+                throw new UserNotFoundException(String.format("User with id - %s not found",userId));
+            }            transactionManager.commitTransaction();
         } catch (SQLException e) {
             transactionManager.rollbackTransaction();
             log.error("Cannot delete user get exception {}", e.getMessage());
@@ -71,11 +92,16 @@ public class UserServiceImplementation implements UserServiceApi {
         return userId;
     }
     @Override
-    public UserDto getUserById(int userId) throws SQLException {
+    public UserDto getUserById(int userId) throws SQLException, UserNotFoundException {
         UserDto userDto;
         try {
             transactionManager.beginTransaction();
-            userDto = fromEntity(userDaoApi.getUserById(userId));
+            User userEntity = userDaoApi.getUserById(userId);
+            if(userEntity!=null){
+                userDto = fromEntity(userEntity);
+            }else{
+                throw new UserNotFoundException(String.format("User with id - %s not found",userId));
+            }
             transactionManager.commitTransaction();
         } catch (SQLException e) {
             transactionManager.rollbackTransaction();
@@ -86,11 +112,16 @@ public class UserServiceImplementation implements UserServiceApi {
     }
 
     @Override
-    public UserDto getUserByUsername(String username) throws SQLException {
+    public UserDto getUserByUsername(String username) throws SQLException, UserNotFoundException {
         UserDto userDto;
         try {
             transactionManager.beginTransaction();
-            userDto = fromEntity(userDaoApi.getUserByUsername(username));
+            User userByUsername = userDaoApi.getUserByUsername(username);
+            if(userByUsername!=null) {
+                userDto = fromEntity(userByUsername);
+            }else{
+                throw new UserNotFoundException(String.format("User with username %s not found",username));
+            }
             transactionManager.commitTransaction();
         } catch (SQLException e) {
             transactionManager.rollbackTransaction();
