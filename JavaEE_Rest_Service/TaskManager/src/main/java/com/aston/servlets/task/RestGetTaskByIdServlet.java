@@ -4,6 +4,8 @@ import com.aston.service.api.TaskServiceApi;
 import com.aston.service.api.UserServiceApi;
 import com.aston.service.implementation.TaskServiceImplementation;
 import com.aston.service.implementation.UserServiceImplementation;
+import com.aston.util.ProjectNotFoundException;
+import com.aston.util.TaskNotFoundException;
 import com.aston.util.dto.TaskDto;
 import com.aston.util.dto.UserDto;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -43,7 +45,11 @@ public class RestGetTaskByIdServlet extends HttpServlet {
             resp.getWriter().write(taskByIdJson);
 
         } catch (SQLException e) {
-            resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            PrintWriter out = resp.getWriter();
+            out.println(String.format("Cannot get by id task server error %s in %s", e.getMessage(), new Date()));
+        } catch (TaskNotFoundException | ProjectNotFoundException e) {
+            resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
             PrintWriter out = resp.getWriter();
             out.println(String.format("Cannot get by id task get error %s in %s", e.getMessage(), new Date()));
         }

@@ -65,9 +65,12 @@ public class ContextListener implements ServletContextListener {
         this.projectDaoApi = new ProjectDaoImplementation(connectionManager);
         this.userTaskDaoApi = new UserTaskDaoImplementation(connectionManager);
         this.userServiceApi = new UserServiceImplementation(userDaoApi,connectionManager);
+
         this.projectServiceApi = new ProjectServiceImplementation(projectDaoApi, connectionManager,taskDaoApi,userTaskDaoApi);
 
-        this.taskServiceApi = new TaskServiceImplementation(taskDaoApi,new ProjectServiceImplementation(new ProjectDaoImplementation(connectionManager), connectionManager,new TaskDaoImplementation(connectionManager)
+        this.taskServiceApi = new TaskServiceImplementation(taskDaoApi,
+                new ProjectServiceImplementation(new ProjectDaoImplementation(connectionManager),
+                        connectionManager,new TaskDaoImplementation(connectionManager)
                 ,new UserTaskDaoImplementation(connectionManager)),connectionManager);
 
         this.userTaskServiceApi = new UserTaskServiceImplementation(userTaskDaoApi,userServiceApi,taskServiceApi, connectionManager);

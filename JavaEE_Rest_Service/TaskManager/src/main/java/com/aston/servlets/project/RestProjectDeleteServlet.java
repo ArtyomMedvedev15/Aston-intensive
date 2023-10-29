@@ -1,6 +1,7 @@
 package com.aston.servlets.project;
 
 import com.aston.service.api.ProjectServiceApi;
+import com.aston.util.ProjectNotFoundException;
 import com.aston.util.dto.ProjectDto;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -35,7 +36,11 @@ public class RestProjectDeleteServlet extends HttpServlet {
             resp.setStatus(HttpServletResponse.SC_NO_CONTENT);
             log.info("Delete project by id with id {}",idDelete);
         } catch (SQLException e) {
-            resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            PrintWriter out = resp.getWriter();
+            out.println(String.format("Cannot delete by id project get error in %s", new Date()));
+        } catch (ProjectNotFoundException e) {
+            resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
             PrintWriter out = resp.getWriter();
             out.println(String.format("Cannot delete by id project get error %s in %s", e.getMessage(), new Date()));
         }

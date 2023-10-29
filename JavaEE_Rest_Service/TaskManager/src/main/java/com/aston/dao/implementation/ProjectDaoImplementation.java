@@ -31,8 +31,9 @@ public class ProjectDaoImplementation implements ProjectDaoApi {
 
     @Override
     public int createProject(Project project) throws SQLException {
-        Connection connection = connectionManager.getConnection();
-        try (PreparedStatement pst = connection.prepareStatement(INSERT_PROJECT_QUERY, Statement.RETURN_GENERATED_KEYS)) {
+
+        try ( Connection connection = connectionManager.getConnection();
+                PreparedStatement pst = connection.prepareStatement(INSERT_PROJECT_QUERY, Statement.RETURN_GENERATED_KEYS)) {
             pst.setString(1, project.getName());
             pst.setString(2, project.getDescription());
             pst.executeUpdate();
@@ -51,8 +52,9 @@ public class ProjectDaoImplementation implements ProjectDaoApi {
     @Override
     public int updateProject(Project project) throws SQLException {
         int rowsUpdated = 0;
-        Connection connection = connectionManager.getConnection();
-        try (PreparedStatement pst = connection.prepareStatement(UPDATE_PROJECT_QUERY)) {
+
+        try ( Connection connection = connectionManager.getConnection();
+                PreparedStatement pst = connection.prepareStatement(UPDATE_PROJECT_QUERY)) {
             pst.setString(1, project.getName());
             pst.setString(2, project.getDescription());
             pst.setLong(3, project.getId());
@@ -68,8 +70,9 @@ public class ProjectDaoImplementation implements ProjectDaoApi {
     @Override
     public int deleteProject(int projectId) throws SQLException {
         int updated_rows;
-        Connection connection = connectionManager.getConnection();
-        try (PreparedStatement pst = connection.prepareStatement(DELETE_PROJECT_QUERY)) {
+
+        try (  Connection connection = connectionManager.getConnection();
+                PreparedStatement pst = connection.prepareStatement(DELETE_PROJECT_QUERY)) {
             pst.setLong(1, projectId);
             updated_rows = pst.executeUpdate();
             log.info("Delete project with id {} in {}",projectId,new Date());
@@ -82,8 +85,9 @@ public class ProjectDaoImplementation implements ProjectDaoApi {
     @Override
     public Project getProjectById(int projectId) throws SQLException {
         Project dbProject = null;
-        Connection connection = connectionManager.getConnection();
-        try (PreparedStatement pst = connection.prepareStatement(SELECT_PROJECT_BY_ID_QUERY)) {
+
+        try ( Connection connection = connectionManager.getConnection();
+                PreparedStatement pst = connection.prepareStatement(SELECT_PROJECT_BY_ID_QUERY)) {
             pst.setInt(1, projectId);
             try (ResultSet rs = pst.executeQuery()) {
                 if (rs.next()) {
@@ -100,9 +104,10 @@ public class ProjectDaoImplementation implements ProjectDaoApi {
 
     @Override
     public  List<Project> getProjectByName(String name) throws SQLException {
-        Connection connection = connectionManager.getConnection();
+
         List<Project> projectByNameList = new ArrayList<>();
-         try (PreparedStatement pst = connection.prepareStatement(SELECT_PROJECT_BY_NAME_QUERY)) {
+         try ( Connection connection = connectionManager.getConnection();
+                 PreparedStatement pst = connection.prepareStatement(SELECT_PROJECT_BY_NAME_QUERY)) {
             String pattern = "%"+name+"%";
             pst.setString(1,pattern);
             try (ResultSet rs = pst.executeQuery()) {
@@ -120,8 +125,9 @@ public class ProjectDaoImplementation implements ProjectDaoApi {
     @Override
     public List<Project> getAllProject() throws SQLException {
         List<Project> projectAllList = new ArrayList<>();
-        Connection connection = connectionManager.getConnection();
-        try (PreparedStatement pst = connection.prepareStatement(SELECT_ALL_PROJECT_QUERY)) {
+
+        try ( Connection connection = connectionManager.getConnection();
+                PreparedStatement pst = connection.prepareStatement(SELECT_ALL_PROJECT_QUERY)) {
              try (ResultSet rs = pst.executeQuery()) {
                 while (rs.next()) {
                     projectAllList.add(parseProjectFromResultSet(rs));

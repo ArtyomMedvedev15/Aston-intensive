@@ -7,8 +7,7 @@ import com.aston.entities.UserTask;
 import com.aston.service.api.TaskServiceApi;
 import com.aston.service.api.UserServiceApi;
 import com.aston.service.api.UserTaskServiceApi;
-import com.aston.util.TransactionException;
-import com.aston.util.UserNotFoundException;
+import com.aston.util.*;
 import com.aston.util.dto.TaskDto;
 import com.aston.util.dto.UserDto;
 import com.aston.util.dto.UserTaskDto;
@@ -17,6 +16,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -40,11 +40,26 @@ public class UserTaskServiceImplementation implements UserTaskServiceApi {
 
 
     @Override
-    public int createUserTask(UserTaskDto userTaskDtoSave) throws SQLException {
+    public int createUserTask(UserTaskDto userTaskDtoSave) throws SQLException, UserNotFoundException,
+            ProjectNotFoundException, TaskNotFoundException, UserTaskAlreadyExistsException {
         UserTask userTaskEntity = fromDto(userTaskDtoSave);
         int userTaskId = 0;
         try {
             transactionManager.beginTransaction();
+            if(userServiceApi.getUserById(userTaskEntity.getUserId())==null){
+                log.info("User with id {} not found in {}",userTaskEntity.getUserId(),new Date());
+                throw new UserNotFoundException(String.format("User with id %s was not found",userTaskEntity.getUserId()));
+            }
+            if(taskServiceApi.getTaskById(userTaskEntity.getTaskId())==null){
+                log.info("Task with id {} not found in {}",userTaskEntity.getTaskId(),new Date());
+                throw new TaskNotFoundException(String.format("Task with id %s was not found",userTaskEntity.getTaskId()));
+            }
+            if(userTaskDao.getAllUserTaskByUser(userTaskEntity.getUserId()).stream()
+                    .anyMatch(o1->o1.getTaskId()==userTaskEntity.getTaskId())){
+                log.info("Task with id {} was already added to user with {} in {}",userTaskEntity.getTaskId(),userTaskEntity.getUserId(),new Date());
+                throw new UserTaskAlreadyExistsException(String.format("Task with id %s already add to user with id %s",
+                        userTaskEntity.getTaskId(),userTaskEntity.getUserId()));
+            }
             userTaskId = userTaskDao.createUserTask(userTaskEntity);
             transactionManager.commitTransaction();
         } catch (SQLException e) {
@@ -81,7 +96,7 @@ public class UserTaskServiceImplementation implements UserTaskServiceApi {
                 try {
                     o1.setTaskId(taskServiceApi.getTaskById(Math.toIntExact(o1.getTaskId().getId())));
                     o1.setUserId(userServiceApi.getUserById(Math.toIntExact(o1.getUserId().getId())));
-                } catch (SQLException | UserNotFoundException e) {
+                } catch (SQLException | UserNotFoundException | TaskNotFoundException | ProjectNotFoundException e) {
                     e.printStackTrace();
                 }
             });
@@ -119,7 +134,7 @@ public class UserTaskServiceImplementation implements UserTaskServiceApi {
             try {
                 o1.setUserId(userServiceApi.getUserById(userid));
                 o1.setTaskId(taskServiceApi.getTaskById(Math.toIntExact(o1.getTaskId().getId())));
-            } catch (SQLException | UserNotFoundException e) {
+            } catch (SQLException | UserNotFoundException | TaskNotFoundException | ProjectNotFoundException e) {
                 e.printStackTrace();
             }
         });

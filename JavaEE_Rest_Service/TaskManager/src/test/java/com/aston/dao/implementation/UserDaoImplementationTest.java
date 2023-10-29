@@ -49,13 +49,22 @@ public class UserDaoImplementationTest {
 
     @Test
     public void UpdateUserTest_ReturnTrue() throws SQLException {
+        User userSave = User.builder()
+                .email("testsaveuser@mail.cas")
+                .username("usertest")
+                .build();
+
+        int userSaveResult = userDaoImplementation.createUser(userSave);
+
         User userUpdate = User.builder()
-                .id(778L)
+                .id((long) userSaveResult)
                 .username("Updated")
                 .email("Updated")
                 .build();
         int userUpdateResult = userDaoImplementation.updateUser(userUpdate);
         Assert.assertTrue(userUpdateResult>0);
+        userDaoImplementation.deleteUser(userSaveResult);
+
     }
 
     @Test
@@ -72,14 +81,31 @@ public class UserDaoImplementationTest {
     }
     @Test
      public void GetUserByIDTest_WithId778_ReturnTrue() throws SQLException {
-        User userById = userDaoImplementation.getUserById(777);
-        Assert.assertEquals("TestUsr", userById.getUsername());
+        User userSave = User.builder()
+                .email("testsaveuser@mail.cas")
+                .username("usertest")
+                .build();
+
+        int userSaveResult = userDaoImplementation.createUser(userSave);
+
+        User userById = userDaoImplementation.getUserById(userSaveResult);
+        Assert.assertEquals("usertest", userById.getUsername());
+        userDaoImplementation.deleteUser(userSaveResult);
+
     }
 
     @Test
     public void GetUserByUsernameTest_ReturnTrue() throws SQLException {
-        User userByUsername = userDaoImplementation.getUserByUsername("TestUsr");
-        Assert.assertEquals("TestUsr", userByUsername.getUsername());
+        User userSave = User.builder()
+                .email("testsaveuser@mail.cas")
+                .username("usertest")
+                .build();
+
+        int userSaveResult = userDaoImplementation.createUser(userSave);
+
+        User userByUsername = userDaoImplementation.getUserByUsername("usertest");
+        Assert.assertEquals("usertest", userByUsername.getUsername());
+        userDaoImplementation.deleteUser(userSaveResult);
 
     }
     @Test

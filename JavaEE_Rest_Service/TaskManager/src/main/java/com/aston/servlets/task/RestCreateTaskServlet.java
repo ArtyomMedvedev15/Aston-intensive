@@ -2,6 +2,7 @@ package com.aston.servlets.task;
 
 import com.aston.service.api.TaskServiceApi;
 import com.aston.service.implementation.TaskServiceImplementation;
+import com.aston.util.TaskInvalidParameterException;
 import com.aston.util.dto.TaskDto;
 import com.aston.util.dto.UserDto;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -60,6 +61,10 @@ public class RestCreateTaskServlet extends HttpServlet {
             PrintWriter out = resp.getWriter();
             out.println(String.format("Save new task with id %s in %s", taskId, new Date()));
         } catch (SQLException e) {
+            resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            PrintWriter out = resp.getWriter();
+            out.println(String.format("Cannot save new task get error with server in %s", new Date()));
+        } catch (TaskInvalidParameterException e) {
             resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
             PrintWriter out = resp.getWriter();
             out.println(String.format("Cannot save new task get error %s in %s", e.getMessage(), new Date()));

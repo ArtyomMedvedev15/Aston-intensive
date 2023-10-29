@@ -1,6 +1,10 @@
 package com.aston.servlets.usertask;
 
 import com.aston.service.api.UserTaskServiceApi;
+import com.aston.util.ProjectNotFoundException;
+import com.aston.util.TaskNotFoundException;
+import com.aston.util.UserNotFoundException;
+import com.aston.util.UserTaskAlreadyExistsException;
 import com.aston.util.dto.ProjectDto;
 import com.aston.util.dto.UserTaskDto;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -58,6 +62,14 @@ public class RestUserTaskSaveServlet extends HttpServlet {
             PrintWriter out = resp.getWriter();
             out.println(String.format("Save new user task with id %s in %s", userTaskId, new Date()));
         } catch (SQLException e) {
+            resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            PrintWriter out = resp.getWriter();
+            out.println(String.format("Cannot save new user task get error with server in %s", new Date()));
+        } catch (UserNotFoundException | TaskNotFoundException | ProjectNotFoundException e) {
+            resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
+            PrintWriter out = resp.getWriter();
+            out.println(String.format("Cannot save new user task get error %s in %s", e.getMessage(), new Date()));
+        } catch (UserTaskAlreadyExistsException e) {
             resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
             PrintWriter out = resp.getWriter();
             out.println(String.format("Cannot save new user task get error %s in %s", e.getMessage(), new Date()));

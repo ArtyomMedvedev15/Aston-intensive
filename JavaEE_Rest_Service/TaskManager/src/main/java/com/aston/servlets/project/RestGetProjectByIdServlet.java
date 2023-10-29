@@ -1,6 +1,7 @@
 package com.aston.servlets.project;
 
 import com.aston.service.api.ProjectServiceApi;
+import com.aston.util.ProjectNotFoundException;
 import com.aston.util.dto.ProjectDto;
 import com.aston.util.dto.UserDto;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -43,7 +44,11 @@ public class RestGetProjectByIdServlet extends HttpServlet {
             resp.getWriter().write(projectById);
 
         } catch (SQLException e) {
-            resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            PrintWriter out = resp.getWriter();
+            out.println(String.format("Cannot get by id project get error with server in %s", new Date()));
+        } catch (ProjectNotFoundException e) {
+            resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
             PrintWriter out = resp.getWriter();
             out.println(String.format("Cannot get by id project get error %s in %s", e.getMessage(), new Date()));
         }

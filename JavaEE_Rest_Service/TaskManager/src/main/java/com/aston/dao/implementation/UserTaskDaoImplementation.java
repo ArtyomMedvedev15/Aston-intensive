@@ -20,7 +20,6 @@ public class UserTaskDaoImplementation implements UserTaskDaoApi {
 
     private final ConnectionManager connectionManager;
 
-
     public UserTaskDaoImplementation(ConnectionManager connectionManager) {
 
         this.connectionManager = connectionManager;
@@ -28,9 +27,8 @@ public class UserTaskDaoImplementation implements UserTaskDaoApi {
 
     @Override
     public int createUserTask(UserTask userTask) throws SQLException {
-        Connection connection = connectionManager.getConnection();
-
-        try (PreparedStatement pst = connection.prepareStatement(INSERT_USER_TASK_QUERY, Statement.RETURN_GENERATED_KEYS)) {
+        try (Connection connection = connectionManager.getConnection();
+              PreparedStatement pst = connection.prepareStatement(INSERT_USER_TASK_QUERY, Statement.RETURN_GENERATED_KEYS)) {
             pst.setInt(1, userTask.getUserId());
             pst.setInt(2, userTask.getTaskId());
             pst.executeUpdate();
@@ -48,9 +46,9 @@ public class UserTaskDaoImplementation implements UserTaskDaoApi {
 
     @Override
     public List<UserTask> getAllUserTaskByUser(int userid) throws SQLException {
-        Connection connection = connectionManager.getConnection();
         List<UserTask> userTaskList = new ArrayList<>();
-        try (PreparedStatement pst = connection.prepareStatement(SELECT_USER_TASK_BY_USER_QUERY)) {
+        try (Connection connection = connectionManager.getConnection();
+             PreparedStatement pst = connection.prepareStatement(SELECT_USER_TASK_BY_USER_QUERY)) {
             pst.setInt(1,userid);
             try (ResultSet rs = pst.executeQuery()) {
                 while (rs.next()) {
@@ -67,9 +65,10 @@ public class UserTaskDaoImplementation implements UserTaskDaoApi {
 
     @Override
     public List<UserTask> getAllUsersTask() throws SQLException {
-        Connection connection = connectionManager.getConnection();
+
         List<UserTask> userTaskList = new ArrayList<>();
-        try (PreparedStatement pst = connection.prepareStatement(SELECT_ALL_USER_TASK_QUERY)) {
+        try (Connection connection = connectionManager.getConnection();
+                PreparedStatement pst = connection.prepareStatement(SELECT_ALL_USER_TASK_QUERY)) {
              try (ResultSet rs = pst.executeQuery()) {
                 while (rs.next()) {
                     userTaskList.add(parseUserTaskFromResultSet(rs));
@@ -85,9 +84,10 @@ public class UserTaskDaoImplementation implements UserTaskDaoApi {
 
     @Override
     public int deleteUserTask(int id) throws SQLException {
-        Connection connection = connectionManager.getConnection();
+
         int updated_rows;
-        try (PreparedStatement pst = connection.prepareStatement(DELETE_USER_TASK_QUERY)) {
+        try ( Connection connection = connectionManager.getConnection();
+               PreparedStatement pst = connection.prepareStatement(DELETE_USER_TASK_QUERY)) {
             pst.setLong(1, id);
             updated_rows = pst.executeUpdate();
         } catch (SQLException ex) {

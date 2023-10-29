@@ -6,6 +6,9 @@ import com.aston.dao.datasource.ConnectionManager;
 import com.aston.entities.Task;
 import com.aston.service.api.ProjectServiceApi;
 import com.aston.service.api.TaskServiceApi;
+import com.aston.util.ProjectNotFoundException;
+import com.aston.util.TaskInvalidParameterException;
+import com.aston.util.TaskNotFoundException;
 import com.aston.util.dto.TaskDto;
 import lombok.extern.slf4j.Slf4j;
 
@@ -30,30 +33,42 @@ public class TaskServiceImplementation implements TaskServiceApi {
      }
 
     @Override
-    public int createTask(TaskDto taskDtoSave) throws SQLException {
+    public int createTask(TaskDto taskDtoSave) throws SQLException, TaskInvalidParameterException {
         Task taskEntity = fromDto(taskDtoSave);
         int taskId = 0;
         try {
-            transactionManager.beginTransaction();
-            taskId = taskDao.createTask(taskEntity);
-            transactionManager.commitTransaction();
+            taskId = ValidationDto(taskEntity);
         } catch (SQLException e) {
-            transactionManager.rollbackTransaction();
-            log.error("Cannot save task get exception {}", e.getMessage());
+             log.error("Cannot save task get exception {}", e.getMessage());
             throw e;
         }
         return taskId;
     }
 
+    private int ValidationDto(Task taskEntity) throws SQLException, TaskInvalidParameterException {
+        int taskId;
+        if((taskEntity.getTitle().length()>5 && taskEntity.getTitle().length()<256) &&
+               (taskEntity.getDescription().length()>10 && taskEntity.getDescription().length()<512)&&
+               (taskEntity.getStatus().length()>3 && taskEntity.getStatus().length()<50)){
+           taskId = taskDao.createTask(taskEntity);
+       }else{
+           throw new TaskInvalidParameterException("Task parameter is invalid, try yet");
+       }
+        return taskId;
+    }
+
     @Override
-    public TaskDto getTaskById(int taskId) throws SQLException {
+    public TaskDto getTaskById(int taskId) throws SQLException, TaskNotFoundException, ProjectNotFoundException {
         TaskDto taskDto;
         try {
             Task taskById = taskDao.getTaskById(taskId);
-            taskDto = fromEntity(taskById);
-            taskDto.setProject(projectService.getProjectById(taskById.getProjectId()));
+            if(taskById!=null) {
+                taskDto = fromEntity(taskById);
+                taskDto.setProject(projectService.getProjectById(taskById.getProjectId()));
+            }else{
+                throw new TaskNotFoundException(String.format("Task with id %s was not found",taskId));
+            }
         } catch (SQLException e) {
-
             log.error("Cannot get project by id with exception {}", e.getMessage());
             throw e;
         }
@@ -69,7 +84,7 @@ public class TaskServiceImplementation implements TaskServiceApi {
             taskDtoList.forEach(o1-> {
                 try {
                     o1.setProject(projectService.getProjectById(o1.getProjectId()));
-                } catch (SQLException e) {
+                } catch (SQLException | ProjectNotFoundException e) {
                     e.printStackTrace();
                 }
             });
@@ -85,14 +100,11 @@ public class TaskServiceImplementation implements TaskServiceApi {
     public List<TaskDto> getAllTasksByProject(int projectId) throws SQLException {
         List<TaskDto> taskDtoListByProject = new ArrayList<>();
         try {
-            transactionManager.beginTransaction();
-            taskDtoListByProject = taskDao.getAllTasksByProject(projectId).stream().map(this::fromEntity)
+             taskDtoListByProject = taskDao.getAllTasksByProject(projectId).stream().map(this::fromEntity)
                     .collect(Collectors.toList());
             setProjectDto(taskDtoListByProject);
-            transactionManager.commitTransaction();
-        } catch (SQLException e) {
-            transactionManager.rollbackTransaction();
-            log.error("Cannot get all task by project with with exception {}",e.getMessage());
+         } catch (SQLException e) {
+             log.error("Cannot get all task by project with with exception {}",e.getMessage());
             e.printStackTrace();
         }
         return taskDtoListByProject;
@@ -101,30 +113,29 @@ public class TaskServiceImplementation implements TaskServiceApi {
 
 
     @Override
-    public int updateTask(TaskDto taskDtoUpdate) throws SQLException {
+    public int updateTask(TaskDto taskDtoUpdate) throws SQLException, TaskInvalidParameterException {
         Task taskEntity = fromDto(taskDtoUpdate);
         int taskId = 0;
         try {
-            transactionManager.beginTransaction();
-            taskId = taskDao.updateTask(taskEntity);
-            transactionManager.commitTransaction();
+            taskId = ValidationDto(taskEntity);
         } catch (SQLException e) {
-            transactionManager.rollbackTransaction();
-            log.error("Cannot update task get exception {}", e.getMessage());
+             log.error("Cannot update task get exception {}", e.getMessage());
             throw e;
         }
         return taskId;
     }
 
     @Override
-    public int deleteTask(int taskId) throws SQLException {
+    public int deleteTask(int taskId) throws SQLException, TaskNotFoundException {
         try {
-            transactionManager.beginTransaction();
-            taskId = taskDao.deleteTask(taskId);
-            transactionManager.commitTransaction();
-        } catch (SQLException e) {
-            transactionManager.rollbackTransaction();
-            log.error("Cannot delete task get exception {}", e.getMessage());
+             Task taskById = taskDao.getTaskById(taskId);
+            if(taskById!=null) {
+                taskId = taskDao.deleteTask(taskId);
+            }else{
+                throw new TaskNotFoundException(String.format("Task with id %s was not found",taskId));
+            }
+         } catch (SQLException e) {
+             log.error("Cannot delete task get exception {}", e.getMessage());
             throw e;
         }
         return taskId;
@@ -134,7 +145,7 @@ public class TaskServiceImplementation implements TaskServiceApi {
         taskDtoList.forEach(o1-> {
             try {
                 o1.setProject(projectService.getProjectById(o1.getProjectId()));
-            } catch (SQLException e) {
+            } catch (SQLException | ProjectNotFoundException e) {
                 e.printStackTrace();
             }
         });

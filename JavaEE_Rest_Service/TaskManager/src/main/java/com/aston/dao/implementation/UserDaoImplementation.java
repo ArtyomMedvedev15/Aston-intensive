@@ -28,8 +28,9 @@ public class UserDaoImplementation implements UserDaoApi {
 
     @Override
     public int createUser(User user) throws SQLException {
-        Connection connection = connectionManager.getConnection();
-        try (PreparedStatement pst = connection.prepareStatement(INSERT_USER_QUERY, Statement.RETURN_GENERATED_KEYS)) {
+
+        try (Connection connection = connectionManager.getConnection();
+                PreparedStatement pst = connection.prepareStatement(INSERT_USER_QUERY, Statement.RETURN_GENERATED_KEYS)) {
             pst.setString(1, user.getUsername());
             pst.setString(2, user.getEmail());
             pst.executeUpdate();
@@ -46,9 +47,10 @@ public class UserDaoImplementation implements UserDaoApi {
     }
     @Override
     public int updateUser(User user) throws SQLException {
-        Connection connection = connectionManager.getConnection();
+
         int rowsUpdated = 0;
-        try (PreparedStatement pst = connection.prepareStatement(UPDATE_USER_QUERY)) {
+        try ( Connection connection = connectionManager.getConnection();
+                PreparedStatement pst = connection.prepareStatement(UPDATE_USER_QUERY)) {
             pst.setString(2, user.getUsername());
             pst.setString(1, user.getEmail());
             pst.setLong(3, user.getId());
@@ -64,10 +66,11 @@ public class UserDaoImplementation implements UserDaoApi {
 
     @Override
     public int deleteUser(int userId) throws SQLException {
-        Connection connection = connectionManager.getConnection();
+
         int updated_rows;
 
-        try (PreparedStatement pst = connection.prepareStatement(DELETE_USER_QUERY)) {
+        try (Connection connection = connectionManager.getConnection();
+                PreparedStatement pst = connection.prepareStatement(DELETE_USER_QUERY)) {
             pst.setLong(1, userId);
             updated_rows = pst.executeUpdate();
         } catch (SQLException ex) {
@@ -79,9 +82,10 @@ public class UserDaoImplementation implements UserDaoApi {
     }
     @Override
     public User getUserById(int userId) throws SQLException {
-        Connection connection = connectionManager.getConnection();
+
         User dbUser = null;
-        try (PreparedStatement pst = connection.prepareStatement(SELECT_USER_BY_ID_QUERY)) {
+        try (Connection connection = connectionManager.getConnection();
+                PreparedStatement pst = connection.prepareStatement(SELECT_USER_BY_ID_QUERY)) {
             pst.setInt(1, userId);
             try (ResultSet rs = pst.executeQuery()) {
                 if (rs.next()) {
@@ -98,9 +102,10 @@ public class UserDaoImplementation implements UserDaoApi {
 
     @Override
     public User getUserByUsername(String username) throws SQLException {
-        Connection connection = connectionManager.getConnection();
+
         User dbUser = null;
-        try (PreparedStatement pst = connection.prepareStatement(SELECT_USER_BY_USERNAME_QUERY)) {
+        try (Connection connection = connectionManager.getConnection();
+                PreparedStatement pst = connection.prepareStatement(SELECT_USER_BY_USERNAME_QUERY)) {
             pst.setString(1, username);
             try (ResultSet rs = pst.executeQuery()) {
                 if (rs.next()) {
@@ -117,9 +122,10 @@ public class UserDaoImplementation implements UserDaoApi {
 
     @Override
     public List<User> getAllUsers() throws SQLException {
-        Connection connection = connectionManager.getConnection();
+
         List<User> usersList = new ArrayList<>();
-        try (PreparedStatement pst = connection.prepareStatement(SELECT_ALL_USERS_QUERY)) {
+        try ( Connection connection = connectionManager.getConnection();
+                PreparedStatement pst = connection.prepareStatement(SELECT_ALL_USERS_QUERY)) {
             try (ResultSet rs = pst.executeQuery()) {
                 while (rs.next()) {
                     usersList.add(parseUserFromResultSet(rs));

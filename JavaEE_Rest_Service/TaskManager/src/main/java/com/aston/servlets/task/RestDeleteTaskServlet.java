@@ -2,6 +2,7 @@ package com.aston.servlets.task;
 
 import com.aston.service.api.TaskServiceApi;
 import com.aston.service.implementation.TaskServiceImplementation;
+import com.aston.util.TaskNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.servlet.ServletException;
@@ -33,9 +34,13 @@ public class RestDeleteTaskServlet extends HttpServlet {
             resp.setStatus(HttpServletResponse.SC_NO_CONTENT);
             log.info("Delete task by id with id {}",idDelete);
         } catch (SQLException e) {
+            resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            PrintWriter out = resp.getWriter();
+            out.println(String.format("Cannot delete by id task get error with server in %s", new Date()));
+        } catch (TaskNotFoundException e) {
             resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
             PrintWriter out = resp.getWriter();
-            out.println(String.format("Cannot delete by id task get error %s in %s", e.getMessage(), new Date()));
+            out.println(String.format("Cannot delete by id task get error %s in %s", e.getMessage(),new Date()));
         }
     }
 }

@@ -8,6 +8,9 @@ import com.aston.dao.datasource.ConnectionManager;
 import com.aston.entities.Project;
 import com.aston.entities.Task;
 import com.aston.service.api.ProjectServiceApi;
+import com.aston.util.ProjectInvalidParameterException;
+import com.aston.util.ProjectNotFoundException;
+import com.aston.util.TaskNotFoundException;
 import com.aston.util.dto.ProjectDto;
 import lombok.extern.slf4j.Slf4j;
 
@@ -21,7 +24,7 @@ public class ProjectServiceImplementation implements ProjectServiceApi {
 
     private final ProjectDaoApi projectDaoApi;
     private TransactionManager transactionManager;
-    private final ConnectionManager connectionManager;
+    private ConnectionManager connectionManager;
 
     private final TaskDaoApi taskDaoApi;
     private final UserTaskDaoApi userTaskDaoApi;
@@ -34,28 +37,36 @@ public class ProjectServiceImplementation implements ProjectServiceApi {
     }
 
     @Override
-    public int createProject(ProjectDto projectDtoSave) throws SQLException {
+    public int createProject(ProjectDto projectDtoSave) throws SQLException, ProjectInvalidParameterException {
         Project projectEntity = fromDto(projectDtoSave);
         int projectId = 0;
         try {
-            transactionManager.beginTransaction();
-            projectId = projectDaoApi.createProject(projectEntity);
-            transactionManager.commitTransaction();
+            projectId = validationDto(projectEntity);
         } catch (SQLException e) {
-            transactionManager.rollbackTransaction();
             log.error("Cannot save project get exception {}", e.getMessage());
             throw e;
         }
         return projectId;
     }
 
+    private int validationDto(Project projectEntity) throws SQLException, ProjectInvalidParameterException {
+        int projectId;
+        if((projectEntity.getName().length()>4 && projectEntity.getName().length()<256)
+                &&(projectEntity.getDescription().length()>10&& projectEntity.getDescription().length()<512)) {
+            projectId = projectDaoApi.createProject(projectEntity);
+        }else {
+            throw new ProjectInvalidParameterException("Project parameter is invalid, try yet");
+        }
+        return projectId;
+    }
+
     @Override
-    public int updateProject(ProjectDto projectDtoSave) throws SQLException {
+    public int updateProject(ProjectDto projectDtoSave) throws SQLException, ProjectInvalidParameterException {
         Project projectEntity = fromDto(projectDtoSave);
         int projectId = 0;
         try {
             transactionManager.beginTransaction();
-            projectId = projectDaoApi.updateProject(projectEntity);
+            projectId = validationDto(projectEntity);
             transactionManager.commitTransaction();
         } catch (SQLException e) {
             transactionManager.rollbackTransaction();
@@ -66,27 +77,32 @@ public class ProjectServiceImplementation implements ProjectServiceApi {
     }
 
     @Override
-    public int deleteProject(int projectId) throws SQLException {
+    public int deleteProject(int projectId) throws SQLException, ProjectNotFoundException {
         try {
-            transactionManager.beginTransaction();
+            Project projectByID = projectDaoApi.getProjectById(projectId);
+            if(projectByID!=null) {
+                projectId = projectDaoApi.deleteProject(projectId);
+            }else{
+                throw new ProjectNotFoundException(String.format("Project with id %s was not found",projectId));
+            }
             projectId = projectDaoApi.deleteProject(projectId);
-            transactionManager.commitTransaction();
-        } catch (SQLException e) {
-            transactionManager.rollbackTransaction();
-            log.error("Cannot delete project get exception {}", e.getMessage());
+         } catch (SQLException e) {
+             log.error("Cannot delete project get exception {}", e.getMessage());
             throw e;
         }
         return projectId;
     }
     @Override
-    public ProjectDto getProjectById(int projectId) throws SQLException {
+    public ProjectDto getProjectById(int projectId) throws SQLException, ProjectNotFoundException {
         ProjectDto projectDto;
         try {
-            transactionManager.beginTransaction();
-            projectDto = fromEntity(projectDaoApi.getProjectById(projectId));
-            transactionManager.commitTransaction();
+            Project projectByID = projectDaoApi.getProjectById(projectId);
+            if(projectByID!=null) {
+                projectDto = fromEntity(projectByID);
+            }else{
+                throw new ProjectNotFoundException(String.format("Project with id %s was not found",projectId));
+            }
         } catch (SQLException e) {
-            transactionManager.rollbackTransaction();
             log.error("Cannot get project by id with exception {}",e.getMessage());
             throw e;
         }

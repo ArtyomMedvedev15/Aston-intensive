@@ -1,6 +1,7 @@
 package com.aston.servlets.project;
 
 import com.aston.service.api.ProjectServiceApi;
+import com.aston.util.ProjectInvalidParameterException;
 import com.aston.util.dto.ProjectDto;
 import com.aston.util.dto.UserDto;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -54,6 +55,10 @@ public class RestProjectCreateServlet extends HttpServlet {
             PrintWriter out = resp.getWriter();
             out.println(String.format("Save new project with id %s in %s", projectId, new Date()));
         } catch (SQLException e) {
+            resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            PrintWriter out = resp.getWriter();
+            out.println(String.format("Cannot save new project get error with serveer in %s", new Date()));
+        } catch (ProjectInvalidParameterException e) {
             resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
             PrintWriter out = resp.getWriter();
             out.println(String.format("Cannot save new project get error %s in %s", e.getMessage(), new Date()));
