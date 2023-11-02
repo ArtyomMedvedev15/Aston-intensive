@@ -38,8 +38,6 @@ public class ContextListener implements ServletContextListener {
     private UserTaskServiceApi userTaskServiceApi;
     @Override
     public void contextInitialized(ServletContextEvent servletContextEvent) {
-
-
         ConnectionPool connectionPool = ConnectionPoolImpl.getInstance();
         try {
             connectionPool.init("database");

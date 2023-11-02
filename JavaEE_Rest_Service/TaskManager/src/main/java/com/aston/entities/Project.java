@@ -1,12 +1,20 @@
 package com.aston.entities;
 
-import lombok.Builder;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.SequenceGenerator;
 import lombok.Data;
 
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+
 @Data
-@Builder
+@Entity
 public class Project {
-    private int id;
+    @Id
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "taskmanager_sequence")
+    @SequenceGenerator(name = "taskmanager_sequence", sequenceName = "taskmanager_sequence")
+    private Long id;
     private String name;
     private String description;
 }
