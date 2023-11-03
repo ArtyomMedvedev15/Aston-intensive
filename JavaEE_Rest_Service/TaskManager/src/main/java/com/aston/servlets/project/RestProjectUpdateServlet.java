@@ -48,7 +48,7 @@ public class RestProjectUpdateServlet extends HttpServlet {
                 .name(name)
                 .description(description)
                 .build();
-        int projectId = 0;
+        Long projectId;
         try {
             projectId = projectServiceApi.updateProject(projectDtoUpdate);
             resp.setStatus(HttpServletResponse.SC_OK);

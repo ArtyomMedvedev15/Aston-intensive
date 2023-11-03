@@ -12,6 +12,8 @@ import com.aston.util.ConnectionPoolException;
 import com.aston.util.ProjectInvalidParameterException;
 import com.aston.util.ProjectNotFoundException;
 import com.aston.util.dto.ProjectDto;
+import lombok.extern.java.Log;
+import org.hibernate.SessionFactory;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -25,13 +27,14 @@ public class ProjectServiceImplementationTest {
 
     private static ProjectServiceImplementation projectServiceImplementation;
     private static ConnectionPool connectionPool;
+    private static SessionFactory sessionFactory;
     @BeforeClass
     public static void init() throws ConnectionPoolException {
         connectionPool = ConnectionPoolImpl.getInstance();
         connectionPool.init("database");
         TransactionManager transactionManager = new TransactionManagerImpl(connectionPool);
         ConnectionManager connectionManager = new ConnectionManager(transactionManager);
-        ProjectDaoApi projectDaoApi = new ProjectDaoImplementation(connectionManager);
+        ProjectDaoApi projectDaoApi = new ProjectDaoImplementation(sessionFactory);
         TaskDaoApi taskDaoApi = new TaskDaoImplementation(connectionManager);
         UserTaskDaoApi userTaskDaoApi = new UserTaskDaoImplementation(connectionManager);
 
@@ -50,7 +53,7 @@ public class ProjectServiceImplementationTest {
                 .description("TestProject")
                 .build();
 
-        int projectSaveResult = projectServiceImplementation.createProject(projectDtoSave);
+        Long projectSaveResult = projectServiceImplementation.createProject(projectDtoSave);
 
         Assert.assertTrue(projectSaveResult>0);
 
@@ -64,15 +67,15 @@ public class ProjectServiceImplementationTest {
                 .description("TestProject")
                 .build();
 
-        int projectSaveId = projectServiceImplementation.createProject(projectDtoSave);
+        Long projectSaveId = projectServiceImplementation.createProject(projectDtoSave);
 
         ProjectDto projectDtoUpdate = ProjectDto.builder()
-                .id((long) projectSaveId)
+                .id(projectSaveId)
                 .name("Update")
                 .description("TestProject")
                 .build();
 
-        int projectUpdateResult = projectServiceImplementation.updateProject(projectDtoUpdate);
+        Long projectUpdateResult = projectServiceImplementation.updateProject(projectDtoUpdate);
 
         Assert.assertTrue(projectUpdateResult>0);
 
@@ -86,8 +89,8 @@ public class ProjectServiceImplementationTest {
                 .description("TestProject")
                 .build();
 
-        int projectSaveId = projectServiceImplementation.createProject(projectDtoSave);
-        int projectDeleteResult = projectServiceImplementation.deleteProject(projectSaveId);
+        Long projectSaveId = projectServiceImplementation.createProject(projectDtoSave);
+        Long projectDeleteResult = projectServiceImplementation.deleteProject(projectSaveId);
         Assert.assertFalse(projectDeleteResult>0);
     }
 
@@ -98,7 +101,7 @@ public class ProjectServiceImplementationTest {
                 .description("TestProject")
                 .build();
 
-        int projectSaveId = projectServiceImplementation.createProject(projectDtoSave);
+        Long projectSaveId = projectServiceImplementation.createProject(projectDtoSave);
 
         ProjectDto projectById = projectServiceImplementation.getProjectById(projectSaveId);
 

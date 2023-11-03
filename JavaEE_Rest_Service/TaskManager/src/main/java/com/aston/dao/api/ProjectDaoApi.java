@@ -7,10 +7,10 @@ import java.sql.SQLException;
 import java.util.List;
 
 public interface ProjectDaoApi {
-    int createProject(Project project) throws SQLException;
-    Project getProjectById(int projectId) throws SQLException;
-    List<Project> getProjectByName(String name) throws SQLException;
-    List<Project> getAllProject() throws SQLException;
-    int updateProject(Project project) throws SQLException;
-    int deleteProject(int projectId) throws SQLException;
+    Long createProject(Project project);
+    Project getProjectById(Long projectId);
+    List<Project> getProjectByName(String name);
+    List<Project> getAllProject();
+    Long updateProject(Project project);
+    Long deleteProject(Long projectId);
 }

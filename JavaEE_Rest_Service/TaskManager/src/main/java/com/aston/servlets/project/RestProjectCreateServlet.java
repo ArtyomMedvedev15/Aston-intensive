@@ -47,7 +47,7 @@ public class RestProjectCreateServlet extends HttpServlet {
                 .name(name)
                 .description(description)
                 .build();
-        int projectId = 0;
+        Long projectId;
 
         try {
             projectId = projectServiceApi.createProject(projectDtoSave);

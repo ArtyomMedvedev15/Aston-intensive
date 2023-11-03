@@ -4,7 +4,17 @@ import com.aston.dao.api.ProjectDaoApi;
 import com.aston.dao.api.TransactionManager;
 import com.aston.dao.datasource.ConnectionManager;
 import com.aston.entities.Project;
+import com.aston.entities.User;
+import jakarta.persistence.TypedQuery;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
 import lombok.extern.slf4j.Slf4j;
+import org.hibernate.Session;
+import org.hibernate.SessionFactory;
+import org.hibernate.Transaction;
+import org.hibernate.query.Query;
 
 import java.sql.*;
 import java.util.ArrayList;
@@ -14,137 +24,121 @@ import java.util.List;
 
 @Slf4j
 public class ProjectDaoImplementation implements ProjectDaoApi {
-
-    private final static String INSERT_PROJECT_QUERY = "INSERT INTO taskmaneger.project(name,description)VALUES(?,?)";
-    private final static String SELECT_PROJECT_BY_ID_QUERY = "SELECT * FROM taskmaneger.project WHERE id = ?";
-    private final static String SELECT_PROJECT_BY_NAME_QUERY ="SELECT *FROM taskmaneger.project WHERE name LIKE ?";
-    private final static String SELECT_ALL_PROJECT_QUERY = "SELECT * FROM taskmaneger.project";
-    private final static String UPDATE_PROJECT_QUERY = "UPDATE taskmaneger.project SET name=?, description=? WHERE id=?";
-    private final static String DELETE_PROJECT_QUERY = "DELETE FROM taskmaneger.project WHERE id = ?";
-
-     private final ConnectionManager connectionManager;
-
-    public ProjectDaoImplementation( ConnectionManager connectionManager) {
-        this.connectionManager = connectionManager;
+    private final SessionFactory sessionFactory;
+    public ProjectDaoImplementation(SessionFactory sessionFactory) {
+        this.sessionFactory = sessionFactory;
     }
 
 
     @Override
-    public int createProject(Project project) throws SQLException {
-
-        try ( Connection connection = connectionManager.getConnection();
-                PreparedStatement pst = connection.prepareStatement(INSERT_PROJECT_QUERY, Statement.RETURN_GENERATED_KEYS)) {
-            pst.setString(1, project.getName());
-            pst.setString(2, project.getDescription());
-            pst.executeUpdate();
-            try (ResultSet rs = pst.getGeneratedKeys()) {
-                rs.next();
-                int id = rs.getInt(1);
-                log.info("Create new project with id {} in {}",id,new Date());
-                return id;
+    public Long createProject(Project project){
+        try (Session session = sessionFactory.openSession()) {
+            Transaction transaction = session.beginTransaction();
+            try {
+                session.persist(project);
+                session.flush();
+                transaction.commit();
+                log.info("Save new user with id {} in {}", project.getId(), new Date());
+                return project.getId();
+            } catch (Exception ex) {
+                transaction.rollback();
+                log.error("Error while saving user: " + ex.getMessage(), ex);
+                ex.printStackTrace();
+                return (long) -1;
             }
-
-        } catch (SQLException ex) {
-            log.error(ex.getMessage(), ex);
-            throw ex;
         }
     }
     @Override
-    public int updateProject(Project project) throws SQLException {
-        int rowsUpdated = 0;
-
-        try ( Connection connection = connectionManager.getConnection();
-                PreparedStatement pst = connection.prepareStatement(UPDATE_PROJECT_QUERY)) {
-            pst.setString(1, project.getName());
-            pst.setString(2, project.getDescription());
-            pst.setLong(3, project.getId());
-            rowsUpdated = pst.executeUpdate();
-            log.info("Update project with id {} in {}",rowsUpdated,new Date());
-        } catch (SQLException ex) {
-            log.error(ex.getMessage(), ex);
-            throw ex;
+    public Long updateProject(Project project){
+        long rowsUpdated = 0;
+        try (Session session = sessionFactory.openSession()) {
+            Transaction transaction = session.beginTransaction();
+            try {
+                session.merge(project);
+                transaction.commit();
+                rowsUpdated = 1;
+                log.info("Update project with id {} in {}",project.getId(),new Date());
+            } catch (Exception e) {
+                transaction.rollback();
+                e.printStackTrace();
+                log.error("Error updating project", e);
+            }
         }
+        log.info("Update project with id {} in {}", project.getId(), new Date());
         return rowsUpdated;
     }
 
     @Override
-    public int deleteProject(int projectId) throws SQLException {
-        int updated_rows;
-
-        try (  Connection connection = connectionManager.getConnection();
-                PreparedStatement pst = connection.prepareStatement(DELETE_PROJECT_QUERY)) {
-            pst.setLong(1, projectId);
-            updated_rows = pst.executeUpdate();
-            log.info("Delete project with id {} in {}",projectId,new Date());
-        } catch (SQLException ex) {
-            log.error(ex.getMessage(), ex);
-             throw ex;
-        }
-        return updated_rows;
-    }
-    @Override
-    public Project getProjectById(int projectId) throws SQLException {
-        Project dbProject = null;
-
-        try ( Connection connection = connectionManager.getConnection();
-                PreparedStatement pst = connection.prepareStatement(SELECT_PROJECT_BY_ID_QUERY)) {
-            pst.setInt(1, projectId);
-            try (ResultSet rs = pst.executeQuery()) {
-                if (rs.next()) {
-                    dbProject = parseProjectFromResultSet(rs);
+    public Long deleteProject(Long projectId){
+        long rowsDeleted = 0;
+        try (Session session = sessionFactory.openSession()) {
+            Transaction transaction = session.beginTransaction();
+            try {
+                Project projectDelete = session.get(Project.class, projectId);
+                if (projectDelete != null) {
+                    session.remove(projectDelete);
+                    transaction.commit();
+                    rowsDeleted = 1;
+                    log.info("Delete project with id {} in {}",projectDelete.getId(),new Date());
                 }
+            } catch (Exception e) {
+                transaction.rollback();
+                e.printStackTrace();
+                log.error("Error deleting user", e);
             }
-            log.info("Get project with id {} in {}",projectId,new Date());
-        } catch (SQLException ex) {
-            log.error(ex.getMessage(), ex);
-             throw ex;
         }
-        return dbProject;
+        return rowsDeleted;
     }
 
     @Override
-    public  List<Project> getProjectByName(String name) throws SQLException {
-
-        List<Project> projectByNameList = new ArrayList<>();
-         try ( Connection connection = connectionManager.getConnection();
-                 PreparedStatement pst = connection.prepareStatement(SELECT_PROJECT_BY_NAME_QUERY)) {
-            String pattern = "%"+name+"%";
-            pst.setString(1,pattern);
-            try (ResultSet rs = pst.executeQuery()) {
-                while (rs.next()) {
-                    projectByNameList.add(parseProjectFromResultSet(rs));
-                }
+    public Project getProjectById(Long projectId){
+            Project project = null;
+            try (Session session = sessionFactory.openSession()) {
+                project = session.get(Project.class, projectId);
+                log.info("Get project with id {} in {}",projectId,new Date());
+            } catch (Exception e) {
+                log.error("Error getting user by ID", e);
             }
-        } catch (SQLException ex) {
-            log.error(ex.getMessage(), ex);
-             throw ex;
-        }
-        return projectByNameList;
+            log.info("Get project by id {} in {}", project, new Date());
+            return project;
     }
 
     @Override
-    public List<Project> getAllProject() throws SQLException {
-        List<Project> projectAllList = new ArrayList<>();
+    public  List<Project> getProjectByName(String name){
+        try (Session session = sessionFactory.openSession()) {
+            CriteriaBuilder builder = session.getCriteriaBuilder();
+            CriteriaQuery<Project> criteria = builder.createQuery(Project.class);
+            Root<Project> root = criteria.from(Project.class);
 
-        try ( Connection connection = connectionManager.getConnection();
-                PreparedStatement pst = connection.prepareStatement(SELECT_ALL_PROJECT_QUERY)) {
-             try (ResultSet rs = pst.executeQuery()) {
-                while (rs.next()) {
-                    projectAllList.add(parseProjectFromResultSet(rs));
-                }
-            }
-        } catch (SQLException ex) {
-            log.error(ex.getMessage(), ex);
-             throw ex;
+            Predicate condition = builder.like(root.get("name"), "%" + name + "%");
+            criteria.where(condition);
+
+            Query<Project> query = session.createQuery(criteria);
+            log.info("Get projects with name containing {} in {}", name, new Date());
+            return query.getResultList();
+        } catch (Exception e) {
+            log.error("Error getting projects by name", e);
+            throw e;
         }
-        return projectAllList;
     }
 
-    private Project parseProjectFromResultSet(ResultSet rs) throws SQLException {
-        Project projectMapper = new Project();
-        projectMapper.setId(Long.parseLong(rs.getString("id")));
-        projectMapper.setName(rs.getString("name"));
-        projectMapper.setDescription(rs.getString("description"));
-        return projectMapper;
+    @Override
+    public List<Project> getAllProject(){
+        try (Session session = sessionFactory.openSession()) {
+            CriteriaBuilder criteriaBuilder = session.getCriteriaBuilder();
+            CriteriaQuery<Project> query = criteriaBuilder.createQuery(Project.class);
+            Root<Project> root = query.from(Project.class);
+            query.select(root);
+
+            TypedQuery<Project> typedQuery = session.createQuery(query);
+            List<Project> projectList = typedQuery.getResultList();
+
+            log.info("Get all project list in {}", new Date());
+            return projectList;
+        } catch (Exception ex) {
+            log.error(ex.getMessage(), ex);
+            ex.printStackTrace();
+            throw ex;
+        }
     }
 }

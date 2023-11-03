@@ -9,10 +9,10 @@ import java.sql.SQLException;
 import java.util.List;
 
 public interface ProjectServiceApi {
-    int createProject(ProjectDto projectDtoSave) throws SQLException, ProjectInvalidParameterException;
-    ProjectDto getProjectById(int projectId) throws SQLException, ProjectNotFoundException;
+    Long createProject(ProjectDto projectDtoSave) throws SQLException, ProjectInvalidParameterException;
+    ProjectDto getProjectById(Long projectId) throws SQLException, ProjectNotFoundException;
     List<ProjectDto> getProjectByName(String name) throws SQLException;
     List<ProjectDto> getAllProject() throws SQLException;
-    int updateProject(ProjectDto projectDtoUpdate) throws SQLException, ProjectInvalidParameterException;
-    int deleteProject(int projectId) throws SQLException, ProjectNotFoundException;
+    Long updateProject(ProjectDto projectDtoUpdate) throws SQLException, ProjectInvalidParameterException;
+    Long deleteProject(Long projectId) throws SQLException, ProjectNotFoundException;
 }

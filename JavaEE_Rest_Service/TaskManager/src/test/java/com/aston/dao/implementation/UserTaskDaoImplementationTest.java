@@ -35,7 +35,7 @@ public class UserTaskDaoImplementationTest {
         ConnectionManager connectionManager = new ConnectionManager(transactionManager);
         taskDaoApi = new TaskDaoImplementation(connectionManager);
         userDaoApi = new UserDaoImplementation(sessionFactory);
-        projectDaoApi = new ProjectDaoImplementation(connectionManager);
+        projectDaoApi = new ProjectDaoImplementation(sessionFactory);
         userTaskDaoImplementation = new UserTaskDaoImplementation(connectionManager);
     }
 
@@ -49,7 +49,7 @@ public class UserTaskDaoImplementationTest {
         projectSave.setName("TestProject");
         projectSave.setDescription("TestProject");
 
-        int projectId = projectDaoApi.createProject(projectSave);
+        Long projectId = projectDaoApi.createProject(projectSave);
 
         Task taskSave = new Task();
         taskSave.setTitle("Test");
@@ -89,7 +89,7 @@ public class UserTaskDaoImplementationTest {
         projectSave.setName("TestProject");
         projectSave.setDescription("TestProject");
 
-        int projectId = projectDaoApi.createProject(projectSave);
+        Long projectId = projectDaoApi.createProject(projectSave);
 
         Task taskSave = new Task();
         taskSave.setTitle("Test");
@@ -128,7 +128,7 @@ public class UserTaskDaoImplementationTest {
         projectSave.setName("TestProject");
         projectSave.setDescription("TestProject");
 
-        int projectId = projectDaoApi.createProject(projectSave);
+        Long projectId = projectDaoApi.createProject(projectSave);
 
         Task taskSave = new Task();
         taskSave.setTitle("Test");
@@ -166,7 +166,7 @@ public class UserTaskDaoImplementationTest {
         projectSave.setName("TestProject");
         projectSave.setDescription("TestProject");
 
-        int projectId = projectDaoApi.createProject(projectSave);
+        Long projectId = projectDaoApi.createProject(projectSave);
 
         Task taskSave = new Task();
         taskSave.setTitle("Test");

@@ -31,7 +31,7 @@ public class RestProjectDeleteServlet extends HttpServlet {
     protected void doDelete(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         String idDelete = req.getParameter("idDelete");
         try {
-            projectServiceApi.deleteProject(Integer.parseInt(idDelete));
+            projectServiceApi.deleteProject(Long.valueOf(idDelete));
             resp.setContentType("application/json");
             resp.setStatus(HttpServletResponse.SC_NO_CONTENT);
             log.info("Delete project by id with id {}",idDelete);

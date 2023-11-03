@@ -1,7 +1,6 @@
 package com.aston.dao.implementation;
 
 import com.aston.dao.api.UserDaoApi;
-import com.aston.dao.datasource.ConnectionManager;
 import com.aston.entities.User;
 import jakarta.persistence.TypedQuery;
 import jakarta.persistence.criteria.CriteriaBuilder;
@@ -13,20 +12,15 @@ import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
 import org.hibernate.query.Query;
 
-import java.sql.*;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
 @Slf4j
 public class UserDaoImplementation implements UserDaoApi {
     private final SessionFactory sessionFactory;
-
     public UserDaoImplementation(SessionFactory sessionFactory) {
         this.sessionFactory = sessionFactory;
     }
-
-
     @Override
     public Long createUser(User user) {
         try (Session session = sessionFactory.openSession()) {

@@ -30,9 +30,9 @@ public class RestGetProjectByIdServlet extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        String userId = req.getParameter("idProject");
+        String projectId = req.getParameter("idProject");
         try {
-            ProjectDto projectDtoById = projectServiceApi.getProjectById(Integer.parseInt(userId));
+            ProjectDto projectDtoById = projectServiceApi.getProjectById(Long.valueOf(projectId));
 
             ObjectMapper objectMapper = new ObjectMapper();
             String projectById = objectMapper.writeValueAsString(projectDtoById);
@@ -40,7 +40,7 @@ public class RestGetProjectByIdServlet extends HttpServlet {
             resp.setContentType("application/json");
             resp.setStatus(HttpServletResponse.SC_OK);
 
-            log.info("Get project by id with id {}",userId);
+            log.info("Get project by id with id {}",projectId);
             resp.getWriter().write(projectById);
 
         } catch (SQLException e) {

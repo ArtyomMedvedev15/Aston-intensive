@@ -12,6 +12,7 @@ import com.aston.service.api.ProjectServiceApi;
 import com.aston.util.*;
 import com.aston.util.dto.ProjectDto;
 import com.aston.util.dto.TaskDto;
+import org.hibernate.SessionFactory;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -28,13 +29,14 @@ public class TaskServiceImplementationTest {
     private static TaskServiceImplementation taskServiceImplementation;
     private static ConnectionPool connectionPool;
     private static ProjectServiceApi projectServiceImplementation;
+    private static SessionFactory sessionFactory;
     @BeforeClass
     public static void init() throws ConnectionPoolException {
         connectionPool = ConnectionPoolImpl.getInstance();
         connectionPool.init("database");
         TransactionManager transactionManager = new TransactionManagerImpl(connectionPool);
         ConnectionManager connectionManager = new ConnectionManager(transactionManager);
-        ProjectDaoApi projectDaoApi = new ProjectDaoImplementation(connectionManager);
+        ProjectDaoApi projectDaoApi = new ProjectDaoImplementation(sessionFactory);
         TaskDaoApi taskDaoApi = new TaskDaoImplementation(connectionManager);
         UserTaskDaoApi userTaskDaoApi = new UserTaskDaoImplementation(connectionManager);
         taskServiceImplementation = new TaskServiceImplementation(taskDaoApi,
@@ -57,14 +59,14 @@ public class TaskServiceImplementationTest {
                 .description("TestProject")
                 .build();
 
-        int projectId = projectServiceImplementation.createProject(projectDtoSave);
+        Long projectId = projectServiceImplementation.createProject(projectDtoSave);
 
         TaskDto taskSave = TaskDto.builder()
                 .title("TestTest")
                 .description("TestTestTest")
                 .deadline(new Date(new java.util.Date().getTime()))
                 .status("Open1")
-                .projectId(projectId)
+                .projectId(Math.toIntExact(projectId))
                 .build();
 
         int taskSaveResult = taskServiceImplementation.createTask(taskSave);
@@ -163,14 +165,14 @@ public class TaskServiceImplementationTest {
                 .description("TestProject")
                 .build();
 
-        int projectId = projectServiceImplementation.createProject(projectDtoSave);
+        Long projectId = projectServiceImplementation.createProject(projectDtoSave);
 
         TaskDto taskSave = TaskDto.builder()
                 .title("TestTest")
                 .description("TestTestTest")
                 .deadline(new Date(new java.util.Date().getTime()))
                 .status("Open")
-                .projectId(projectId)
+                .projectId(Math.toIntExact(projectId))
                 .build();
 
         int taskId = taskServiceImplementation.createTask(taskSave);
@@ -200,14 +202,14 @@ public class TaskServiceImplementationTest {
                 .description("TestProject")
                 .build();
 
-        int projectId = projectServiceImplementation.createProject(projectDtoSave);
+        Long projectId = projectServiceImplementation.createProject(projectDtoSave);
 
         TaskDto taskSave = TaskDto.builder()
                 .title("TestTest")
                 .description("TestTestTest")
                 .deadline(new Date(new java.util.Date().getTime()))
                 .status("Open")
-                .projectId(projectId)
+                .projectId(Math.toIntExact(projectId))
                 .build();
 
         int taskId = taskServiceImplementation.createTask(taskSave);
@@ -227,19 +229,19 @@ public class TaskServiceImplementationTest {
                 .description("TestProject")
                 .build();
 
-        int projectId = projectServiceImplementation.createProject(projectDtoSave);
+        Long projectId = projectServiceImplementation.createProject(projectDtoSave);
 
         TaskDto taskSave = TaskDto.builder()
                 .title("TestTest")
                 .description("TestTestTest")
                 .deadline(new Date(new java.util.Date().getTime()))
                 .status("Open1")
-                .projectId(projectId)
+                .projectId(Math.toIntExact(projectId))
                 .build();
 
         int taskId = taskServiceImplementation.createTask(taskSave);
 
-        List<TaskDto> allTasks = taskServiceImplementation.getAllTasksByProject(projectId);
+        List<TaskDto> allTasks = taskServiceImplementation.getAllTasksByProject(Math.toIntExact(projectId));
 
         Assert.assertTrue(allTasks.size()>0);
 
@@ -254,13 +256,13 @@ public class TaskServiceImplementationTest {
                 .description("TestProject")
                 .build();
 
-        int projectId = projectServiceImplementation.createProject(projectDtoSave);
+        Long projectId = projectServiceImplementation.createProject(projectDtoSave);
         TaskDto taskSave = TaskDto.builder()
                 .title("TestTest")
                 .description("TestTestTest")
                 .deadline(new Date(new java.util.Date().getTime()))
                 .status("Open")
-                .projectId(projectId)
+                .projectId(Math.toIntExact(projectId))
                 .build();
         int taskId = taskServiceImplementation.createTask(taskSave);
 
@@ -270,7 +272,7 @@ public class TaskServiceImplementationTest {
                 .description("UpdateUpdate")
                 .deadline(new Date(new java.util.Date().getTime()))
                 .status("Open")
-                .projectId(projectId)
+                .projectId(Math.toIntExact(projectId))
                 .build();
 
         int taskUpdateResult = taskServiceImplementation.updateTask(taskUpdate);
@@ -369,14 +371,14 @@ public class TaskServiceImplementationTest {
                 .description("TestProject")
                 .build();
 
-        int projectId = projectServiceImplementation.createProject(projectDtoSave);
+        Long projectId = projectServiceImplementation.createProject(projectDtoSave);
 
         TaskDto taskSave = TaskDto.builder()
                 .title("TestTest")
                 .description("TestTestTest")
                 .deadline(new Date(new java.util.Date().getTime()))
                 .status("Open")
-                .projectId(projectId)
+                .projectId(Math.toIntExact(projectId))
                 .build();
 
         int taskId = taskServiceImplementation.createTask(taskSave);

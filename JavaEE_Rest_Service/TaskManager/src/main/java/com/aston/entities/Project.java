@@ -18,6 +18,6 @@ public class Project {
     private Long id;
     private String name;
     private String description;
-    @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "project", cascade = CascadeType.DETACH, fetch = FetchType.LAZY)
     private Set<Task> tasks = new HashSet<>();
 }

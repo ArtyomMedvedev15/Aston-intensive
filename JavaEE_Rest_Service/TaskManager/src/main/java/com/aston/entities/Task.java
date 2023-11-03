@@ -22,10 +22,11 @@ public class Task {
     private String description;
     private Date deadline;
     private String status;
-    @ManyToOne
+
+    @ManyToOne(cascade = CascadeType.DETACH)
     @JoinColumn(name = "project_id")
     private Project project;
-    @ManyToMany(mappedBy = "userTask",fetch = FetchType.LAZY,cascade = CascadeType.ALL)
+    @ManyToMany(mappedBy = "userTask",fetch = FetchType.LAZY,cascade = CascadeType.DETACH)
     private Set<User> taskUser = new HashSet<>();
 
 }
