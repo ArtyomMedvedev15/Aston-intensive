@@ -1,97 +1,59 @@
 package com.aston.dao.implementation;
 
 
-import com.aston.dao.api.ConnectionPool;
-import com.aston.dao.api.TransactionManager;
-import com.aston.dao.datasource.ConnectionManager;
-import com.aston.dao.datasource.ConnectionPoolImpl;
-import com.aston.dao.datasource.TransactionManagerImpl;
 import com.aston.entities.Project;
 import com.aston.entities.Task;
-import com.aston.util.ConnectionPoolException;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.flywaydb.core.Flyway;
+import org.hibernate.Session;
+import org.hibernate.SessionFactory;
+import org.hibernate.Transaction;
+import org.hibernate.cfg.Configuration;
+import org.junit.*;
 
 import java.sql.Date;
-import java.sql.SQLException;
 import java.util.List;
+
 
 public class TaskDaoImplementationTest {
     private static TaskDaoImplementation taskDaoImplementation;
-    private static ConnectionPool connectionPool;
+    private static SessionFactory sessionFactory;
     @BeforeClass
-    public static void init() throws ConnectionPoolException {
-        connectionPool = ConnectionPoolImpl.getInstance();
-        connectionPool.init("database");
-        TransactionManager transactionManager = new TransactionManagerImpl(connectionPool);
-        ConnectionManager connectionManager = new ConnectionManager(transactionManager);
-        taskDaoImplementation = new TaskDaoImplementation(connectionManager);
+    public static void init(){
+        Flyway flyway = Flyway.configure()
+                .dataSource("jdbc:postgresql://localhost:5432/taskmanagertest",
+                        "postgres", "postgres")
+                .schemas("taskmanager")
+                .locations("classpath:db/migration")
+                .load();
+        flyway.migrate();
+        Configuration configuration = new Configuration();
+        configuration.configure("hibernate-test.cfg.xml");
+        sessionFactory = configuration.buildSessionFactory();
+        taskDaoImplementation = new TaskDaoImplementation(sessionFactory);
+     }
+
+    @After
+    public void cleanup() {
+        Session session = sessionFactory.openSession();
+        Transaction tx = session.beginTransaction();
+        session.createQuery("DELETE FROM Task ").executeUpdate();
+        tx.commit();
+        session.close();
     }
 
     @AfterClass
-    public static void destroy() throws ConnectionPoolException {
-        connectionPool.destroy();
+    public static void closeSession() {
+        if (sessionFactory != null) {
+            sessionFactory.close();
+        }
     }
 
 
     @Test
-    public void CreateTaskTest_ReturnTrue() throws SQLException {
+    public void CreateTaskTest_ReturnTrue(){
         Project project = new Project();
-        project.setId(777L);
-        Task taskSave = new Task();
-                taskSave.setTitle("Test");
-                taskSave.setDescription("Test");
-                taskSave.setDeadline(new Date(new java.util.Date().getTime()));
-                taskSave.setStatus("Open");
-                taskSave.setProject(project);
+        project.setId(778L);
 
-        int taskSaveResult = taskDaoImplementation.createTask(taskSave);
-
-        Assert.assertTrue(taskSaveResult>0);
-
-        taskDaoImplementation.deleteTask(taskSaveResult);
-    }
-
-    @Test
-    public void GetTaskByIdTest_WithId779_ReturnTrue() throws SQLException {
-        Task taskById = taskDaoImplementation.getTaskById(779);
-        Assert.assertEquals("TestTask1", taskById.getTitle());
-    }
-
-    @Test
-    public void GetAllTasksTest_ReturnTrue() throws SQLException {
-        List<Task> allTasks = taskDaoImplementation.getAllTasks();
-        Assert.assertTrue(allTasks.size()>0);
-    }
-
-    @Test
-    public void GetAllTasksByProjectTest_WithProjectId777_ReturnTrue() throws SQLException {
-        List<Task> allTasksByProject = taskDaoImplementation.getAllTasksByProject(777);
-        Assert.assertTrue(allTasksByProject.size()>0);
-    }
-
-    @Test
-    public void UpdateTaskTest_WithId778_ReturnTrue() throws SQLException {
-        Project project = new Project();
-        project.setId(777L);
-        Task taskUpdate = new Task();
-        taskUpdate.setId(778L);
-        taskUpdate.setTitle("Update");
-        taskUpdate.setDescription("Test");
-        taskUpdate.setDeadline(new Date(new java.util.Date().getTime()));
-        taskUpdate.setStatus("Open");
-        taskUpdate.setProject(project);
-
-        int taskUpdateResult = taskDaoImplementation.updateTask(taskUpdate);
-        Assert.assertTrue(taskUpdateResult>0);
-    }
-
-    @Test
-    public void DeleteTaskTest_ReturnTrue() throws SQLException {
-        Project project = new Project();
-        project.setId(777L);
         Task taskSave = new Task();
         taskSave.setTitle("Test");
         taskSave.setDescription("Test");
@@ -99,8 +61,79 @@ public class TaskDaoImplementationTest {
         taskSave.setStatus("Open");
         taskSave.setProject(project);
 
-        int taskDeleteId = taskDaoImplementation.createTask(taskSave);
-        int deleteTaskResult = taskDaoImplementation.deleteTask(taskDeleteId);
+        Long taskSaveResult = taskDaoImplementation.createTask(taskSave);
+
+        Assert.assertTrue(taskSaveResult>0);
+
+    }
+
+    @Test
+    public void GetTaskByIdTest_WithId779_ReturnTrue(){
+        Project project = new Project();
+        project.setId(778L);
+
+        Task taskSave = new Task();
+        taskSave.setTitle("Test");
+        taskSave.setDescription("Test");
+        taskSave.setDeadline(new Date(new java.util.Date().getTime()));
+        taskSave.setStatus("Open");
+        taskSave.setProject(project);
+
+        Long taskSaveResult = taskDaoImplementation.createTask(taskSave);
+
+        Task taskById = taskDaoImplementation.getTaskById(taskSaveResult);
+        Assert.assertEquals("Test", taskById.getTitle());
+    }
+
+    @Test
+    public void GetAllTasksTest_ReturnTrue(){
+        Project project = new Project();
+        project.setId(778L);
+
+        Task taskSave = new Task();
+        taskSave.setTitle("Test");
+        taskSave.setDescription("Test");
+        taskSave.setDeadline(new Date(new java.util.Date().getTime()));
+        taskSave.setStatus("Open");
+        taskSave.setProject(project);
+
+        taskDaoImplementation.createTask(taskSave);
+        List<Task> allTasks = taskDaoImplementation.getAllTasks();
+        Assert.assertTrue(allTasks.size()>0);
+    }
+
+    @Test
+    public void UpdateTaskTest_WithId778_ReturnTrue(){
+        Project project = new Project();
+        project.setId(777L);
+
+        Task taskUpdate = new Task();
+
+        taskUpdate.setId(778L);
+        taskUpdate.setTitle("Update");
+        taskUpdate.setDescription("Test");
+        taskUpdate.setDeadline(new Date(new java.util.Date().getTime()));
+        taskUpdate.setStatus("Open");
+        taskUpdate.setProject(project);
+
+        Long taskUpdateResult = taskDaoImplementation.updateTask(taskUpdate);
+        Assert.assertTrue(taskUpdateResult>0);
+    }
+
+    @Test
+    public void DeleteTaskTest_ReturnTrue(){
+        Project project = new Project();
+        project.setId(777L);
+
+        Task taskSave = new Task();
+        taskSave.setTitle("Test");
+        taskSave.setDescription("Test");
+        taskSave.setDeadline(new Date(new java.util.Date().getTime()));
+        taskSave.setStatus("Open");
+        taskSave.setProject(project);
+
+        Long taskDeleteId = taskDaoImplementation.createTask(taskSave);
+        Long deleteTaskResult = taskDaoImplementation.deleteTask(taskDeleteId);
 
         Assert.assertTrue(deleteTaskResult>0);
     }

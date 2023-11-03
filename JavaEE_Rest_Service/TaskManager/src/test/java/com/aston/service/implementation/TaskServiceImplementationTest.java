@@ -21,6 +21,7 @@ import org.junit.Test;
 import java.sql.Date;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Set;
 
 import static org.junit.Assert.assertThrows;
 
@@ -37,7 +38,7 @@ public class TaskServiceImplementationTest {
         TransactionManager transactionManager = new TransactionManagerImpl(connectionPool);
         ConnectionManager connectionManager = new ConnectionManager(transactionManager);
         ProjectDaoApi projectDaoApi = new ProjectDaoImplementation(sessionFactory);
-        TaskDaoApi taskDaoApi = new TaskDaoImplementation(connectionManager);
+        TaskDaoApi taskDaoApi = new TaskDaoImplementation(sessionFactory);
         UserTaskDaoApi userTaskDaoApi = new UserTaskDaoImplementation(connectionManager);
         taskServiceImplementation = new TaskServiceImplementation(taskDaoApi,
                 new ProjectServiceImplementation(projectDaoApi,
@@ -69,7 +70,7 @@ public class TaskServiceImplementationTest {
                 .projectId(Math.toIntExact(projectId))
                 .build();
 
-        int taskSaveResult = taskServiceImplementation.createTask(taskSave);
+        Long taskSaveResult = taskServiceImplementation.createTask(taskSave);
 
         Assert.assertTrue(taskSaveResult>0);
 
@@ -175,7 +176,7 @@ public class TaskServiceImplementationTest {
                 .projectId(Math.toIntExact(projectId))
                 .build();
 
-        int taskId = taskServiceImplementation.createTask(taskSave);
+        Long taskId = taskServiceImplementation.createTask(taskSave);
 
         TaskDto taskById = taskServiceImplementation.getTaskById(taskId);
 
@@ -190,7 +191,7 @@ public class TaskServiceImplementationTest {
     public void GetTaskByIdTest_WithNonExistsTask_ReturnTrue()  {
         TaskNotFoundException taskNotFoundException = assertThrows(
                 TaskNotFoundException.class,
-                () -> taskServiceImplementation.getTaskById(989898));
+                () -> taskServiceImplementation.getTaskById(989898L));
 
         Assert.assertEquals("Task with id 989898 was not found", taskNotFoundException.getMessage());
     }
@@ -212,7 +213,7 @@ public class TaskServiceImplementationTest {
                 .projectId(Math.toIntExact(projectId))
                 .build();
 
-        int taskId = taskServiceImplementation.createTask(taskSave);
+        Long taskId = taskServiceImplementation.createTask(taskSave);
 
         List<TaskDto> allTasks = taskServiceImplementation.getAllTasks();
 
@@ -239,9 +240,9 @@ public class TaskServiceImplementationTest {
                 .projectId(Math.toIntExact(projectId))
                 .build();
 
-        int taskId = taskServiceImplementation.createTask(taskSave);
+        Long taskId = taskServiceImplementation.createTask(taskSave);
 
-        List<TaskDto> allTasks = taskServiceImplementation.getAllTasksByProject(Math.toIntExact(projectId));
+        Set<TaskDto> allTasks = taskServiceImplementation.getAllTasksByProject(projectId);
 
         Assert.assertTrue(allTasks.size()>0);
 
@@ -264,7 +265,7 @@ public class TaskServiceImplementationTest {
                 .status("Open")
                 .projectId(Math.toIntExact(projectId))
                 .build();
-        int taskId = taskServiceImplementation.createTask(taskSave);
+        Long taskId = taskServiceImplementation.createTask(taskSave);
 
         TaskDto taskUpdate = TaskDto.builder()
                 .id((long) taskId)
@@ -275,7 +276,7 @@ public class TaskServiceImplementationTest {
                 .projectId(Math.toIntExact(projectId))
                 .build();
 
-        int taskUpdateResult = taskServiceImplementation.updateTask(taskUpdate);
+        Long taskUpdateResult = taskServiceImplementation.updateTask(taskUpdate);
 
         Assert.assertTrue(taskUpdateResult>0);
 
@@ -381,10 +382,10 @@ public class TaskServiceImplementationTest {
                 .projectId(Math.toIntExact(projectId))
                 .build();
 
-        int taskId = taskServiceImplementation.createTask(taskSave);
+        Long taskId = taskServiceImplementation.createTask(taskSave);
 
 
-        int taskDeleteResult = taskServiceImplementation.deleteTask(taskId);
+        Long taskDeleteResult = taskServiceImplementation.deleteTask(taskId);
         Assert.assertTrue(taskDeleteResult>0);
 
         projectServiceImplementation.deleteProject(projectId);
@@ -394,7 +395,7 @@ public class TaskServiceImplementationTest {
     public void DeleteTaskTest_WithNonExistsTask_ReturnTrue(){
         TaskNotFoundException taskNotFoundException = assertThrows(
                 TaskNotFoundException.class,
-                () -> taskServiceImplementation.deleteTask(989898));
+                () -> taskServiceImplementation.deleteTask(989898L));
 
         Assert.assertEquals("Task with id 989898 was not found", taskNotFoundException.getMessage());
     }

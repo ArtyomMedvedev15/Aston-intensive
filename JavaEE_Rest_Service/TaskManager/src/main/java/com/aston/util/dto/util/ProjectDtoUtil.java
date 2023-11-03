@@ -1,6 +1,7 @@
-package com.aston.util.dto;
+package com.aston.util.dto.util;
 
 import com.aston.entities.Project;
+import com.aston.util.dto.ProjectDto;
 
 public class ProjectDtoUtil {
     public static Project fromDto(ProjectDto projectDto) {

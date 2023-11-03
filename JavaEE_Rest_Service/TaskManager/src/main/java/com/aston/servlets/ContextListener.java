@@ -17,9 +17,7 @@ import com.aston.util.ConnectionPoolException;
 import lombok.extern.slf4j.Slf4j;
 import org.flywaydb.core.Flyway;
 import org.hibernate.SessionFactory;
-import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
 import org.hibernate.cfg.Configuration;
-import org.hibernate.service.ServiceRegistry;
 
 import javax.servlet.ServletContext;
 import javax.servlet.ServletContextEvent;
@@ -67,7 +65,7 @@ public class ContextListener implements ServletContextListener {
         SessionFactory sessionFactory = configuration.buildSessionFactory();
 
         this.userDaoApi = new UserDaoImplementation(sessionFactory);
-        this.taskDaoApi = new TaskDaoImplementation(connectionManager);
+        this.taskDaoApi = new TaskDaoImplementation(sessionFactory);
         this.projectDaoApi = new ProjectDaoImplementation(sessionFactory);
         this.userTaskDaoApi = new UserTaskDaoImplementation(connectionManager);
         this.userServiceApi = new UserServiceImplementation(userDaoApi,connectionManager);
@@ -76,7 +74,7 @@ public class ContextListener implements ServletContextListener {
 
         this.taskServiceApi = new TaskServiceImplementation(taskDaoApi,
                 new ProjectServiceImplementation(new ProjectDaoImplementation(sessionFactory),
-                        connectionManager,new TaskDaoImplementation(connectionManager)
+                        connectionManager,new TaskDaoImplementation(sessionFactory)
                 ,new UserTaskDaoImplementation(connectionManager)),connectionManager);
 
         this.userTaskServiceApi = new UserTaskServiceImplementation(userTaskDaoApi,userServiceApi,taskServiceApi, connectionManager);

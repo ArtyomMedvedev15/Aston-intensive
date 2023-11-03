@@ -46,7 +46,7 @@ public class UserDaoImplementationTest {
     }
 
     @Test
-    public void CreateNewUserTest_ReturnTrue() throws SQLException {
+    public void CreateNewUserTest_ReturnTrue(){
         User userSave = new User();
                 userSave.setEmail("testsaveuser@mail.cas");
                 userSave.setUsername("usertest");
@@ -54,12 +54,10 @@ public class UserDaoImplementationTest {
         Long userSaveResult = userDaoImplementation.createUser(userSave);
 
         Assert.assertTrue(userSaveResult>0);
-
-        userDaoImplementation.deleteUser(userSaveResult);
     }
 
     @Test
-    public void UpdateUserTest_ReturnTrue() throws SQLException {
+    public void UpdateUserTest_ReturnTrue(){
         User userSave = new User();
         userSave.setEmail("testsaveuser@mail.cas");
         userSave.setUsername("usertest");
@@ -72,8 +70,6 @@ public class UserDaoImplementationTest {
         userUpdate.setUsername("Updated");
         Long userUpdateResult = userDaoImplementation.updateUser(userUpdate);
         Assert.assertTrue(userUpdateResult>0);
-        userDaoImplementation.deleteUser( userSaveResult);
-
     }
 
     @Test
@@ -88,7 +84,7 @@ public class UserDaoImplementationTest {
         Assert.assertTrue(userDeleteResult>0);
     }
     @Test
-     public void GetUserByIDTest_WithId778_ReturnTrue() throws SQLException {
+     public void GetUserByIDTest_WithId778_ReturnTrue(){
         User userSave = new User();
         userSave.setEmail("testsaveuser@mail.cas");
         userSave.setUsername("usertest");
@@ -97,8 +93,6 @@ public class UserDaoImplementationTest {
 
         User userById = userDaoImplementation.getUserById(userSaveResult);
         Assert.assertEquals("usertest", userById.getUsername());
-        userDaoImplementation.deleteUser(userSaveResult);
-
     }
 
     @Test
@@ -110,8 +104,6 @@ public class UserDaoImplementationTest {
 
         User userByUsername = userDaoImplementation.getUserByUsername("usertest");
         Assert.assertEquals("usertest", userByUsername.getUsername());
-        userDaoImplementation.deleteUser(userSaveResult);
-
     }
     @Test
     public void GetAllUsersTest_ReturnTrue(){

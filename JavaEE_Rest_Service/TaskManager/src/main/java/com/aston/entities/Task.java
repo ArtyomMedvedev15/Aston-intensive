@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 
 
 import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
 
 import java.sql.Date;
@@ -11,6 +13,8 @@ import java.util.HashSet;
 import java.util.Set;
 
 @Data
+@EqualsAndHashCode
+@ToString
 @Entity
 @Table(name = "task", schema = "taskmanager")
 public class Task {
@@ -23,10 +27,10 @@ public class Task {
     private Date deadline;
     private String status;
 
-    @ManyToOne(cascade = CascadeType.DETACH)
+    @ManyToOne(cascade = CascadeType.MERGE)
     @JoinColumn(name = "project_id")
     private Project project;
-    @ManyToMany(mappedBy = "userTask",fetch = FetchType.LAZY,cascade = CascadeType.DETACH)
+    @ManyToMany(mappedBy = "userTask",cascade = CascadeType.ALL)
     private Set<User> taskUser = new HashSet<>();
 
 }

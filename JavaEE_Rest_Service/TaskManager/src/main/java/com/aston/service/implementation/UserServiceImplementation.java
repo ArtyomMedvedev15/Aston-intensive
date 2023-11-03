@@ -8,16 +8,15 @@ import com.aston.service.api.UserServiceApi;
 import com.aston.util.UserInvalidParameterException;
 import com.aston.util.UserNotFoundException;
 import com.aston.util.dto.UserDto;
-import com.aston.util.dto.UserDtoUtil;
+import com.aston.util.dto.util.UserDtoUtil;
 import lombok.extern.slf4j.Slf4j;
 
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static com.aston.util.dto.UserDtoUtil.fromEntity;
+import static com.aston.util.dto.util.UserDtoUtil.fromEntity;
 
 @Slf4j
 public class UserServiceImplementation implements UserServiceApi {

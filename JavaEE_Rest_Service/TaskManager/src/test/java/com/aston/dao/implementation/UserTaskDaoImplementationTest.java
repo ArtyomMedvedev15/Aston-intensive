@@ -33,7 +33,7 @@ public class UserTaskDaoImplementationTest {
         connectionPool.init("database");
         TransactionManager transactionManager = new TransactionManagerImpl(connectionPool);
         ConnectionManager connectionManager = new ConnectionManager(transactionManager);
-        taskDaoApi = new TaskDaoImplementation(connectionManager);
+        taskDaoApi = new TaskDaoImplementation(sessionFactory);
         userDaoApi = new UserDaoImplementation(sessionFactory);
         projectDaoApi = new ProjectDaoImplementation(sessionFactory);
         userTaskDaoImplementation = new UserTaskDaoImplementation(connectionManager);
@@ -58,7 +58,7 @@ public class UserTaskDaoImplementationTest {
         taskSave.setStatus("Open");
 
 
-        int taskId = taskDaoApi.createTask(taskSave);
+        Long taskId = taskDaoApi.createTask(taskSave);
 
         User userSave = new User();
         userSave.setEmail("testsaveuser@mail.cas");
@@ -69,7 +69,7 @@ public class UserTaskDaoImplementationTest {
 
         UserTask userTaskSave = UserTask.builder()
                 .userId(Math.toIntExact(userId))
-                .taskId(taskId)
+                .taskId(Math.toIntExact(taskId))
                 .build();
 
         int userTaskSaveResult = userTaskDaoImplementation.createUserTask(userTaskSave);
@@ -98,7 +98,7 @@ public class UserTaskDaoImplementationTest {
         taskSave.setStatus("Open");
 
 
-        int taskId = taskDaoApi.createTask(taskSave);
+        Long taskId = taskDaoApi.createTask(taskSave);
 
         User userSave = new User();
         userSave.setEmail("testsaveuser@mail.cas");
@@ -108,7 +108,7 @@ public class UserTaskDaoImplementationTest {
 
         UserTask userTaskSave = UserTask.builder()
                 .userId(userId)
-                .taskId(taskId)
+                .taskId(Math.toIntExact(taskId))
                 .build();
 
         int userTaskSaveResult = userTaskDaoImplementation.createUserTask(userTaskSave);
@@ -136,7 +136,7 @@ public class UserTaskDaoImplementationTest {
         taskSave.setDeadline(new Date(new java.util.Date().getTime()));
         taskSave.setStatus("Open");
 
-        int taskId = taskDaoApi.createTask(taskSave);
+        Long taskId = taskDaoApi.createTask(taskSave);
 
         User userSave = new User();
         userSave.setEmail("testsaveuser@mail.cas");
@@ -146,7 +146,7 @@ public class UserTaskDaoImplementationTest {
 
         UserTask userTaskSave = UserTask.builder()
                 .userId(userId)
-                .taskId(taskId)
+                .taskId(Math.toIntExact(taskId))
                 .build();
 
         int userTaskSaveResult = userTaskDaoImplementation.createUserTask(userTaskSave);
@@ -175,7 +175,7 @@ public class UserTaskDaoImplementationTest {
         taskSave.setStatus("Open");
 
 
-        int taskId = taskDaoApi.createTask(taskSave);
+        Long taskId = taskDaoApi.createTask(taskSave);
 
         User userSave = new User();
         userSave.setEmail("testsaveuser@mail.cas");
@@ -185,7 +185,7 @@ public class UserTaskDaoImplementationTest {
 
         UserTask userTaskSave = UserTask.builder()
                 .userId(userId)
-                .taskId(taskId)
+                .taskId(Math.toIntExact(taskId))
                 .build();
 
         int userTaskSaveResult = userTaskDaoImplementation.createUserTask(userTaskSave);

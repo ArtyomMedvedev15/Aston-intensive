@@ -1,6 +1,7 @@
-package com.aston.util.dto;
+package com.aston.util.dto.util;
 
 import com.aston.entities.User;
+import com.aston.util.dto.UserDto;
 
 public class UserDtoUtil {
     public static User fromDto(UserDto dto) {

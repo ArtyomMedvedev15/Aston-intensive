@@ -1,6 +1,7 @@
 package com.aston.dao.implementation;
 
 import com.aston.entities.Project;
+import com.aston.entities.Task;
 import org.flywaydb.core.Flyway;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
@@ -8,7 +9,9 @@ import org.hibernate.Transaction;
 import org.hibernate.cfg.Configuration;
 import org.junit.*;
 
+import java.sql.Date;
 import java.util.List;
+import java.util.Set;
 
 public class ProjectDaoImplementationTest {
 
@@ -54,9 +57,6 @@ public class ProjectDaoImplementationTest {
         Long projectSaveResult = projectDaoImplementation.createProject(projectSave);
 
         Assert.assertTrue(projectSaveResult>0);
-
-        projectDaoImplementation.deleteProject(projectSaveResult);
-
     }
 
     @Test
@@ -122,5 +122,11 @@ public class ProjectDaoImplementationTest {
 
         List<Project> allProject = projectDaoImplementation.getAllProject();
         Assert.assertTrue(allProject.size()>0);
+    }
+
+    @Test
+    public void GetAllTasksByProjectTest_WithProjectId777_ReturnTrue(){
+        Set<Task> allTasksByProject = projectDaoImplementation.getAllTasksByProject(777L);
+        Assert.assertTrue(allTasksByProject.size()>0);
     }
 }

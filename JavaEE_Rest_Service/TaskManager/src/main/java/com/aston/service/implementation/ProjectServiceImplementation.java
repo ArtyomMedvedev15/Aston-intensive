@@ -6,22 +6,24 @@ import com.aston.dao.api.TransactionManager;
 import com.aston.dao.api.UserTaskDaoApi;
 import com.aston.dao.datasource.ConnectionManager;
 import com.aston.entities.Project;
-import com.aston.entities.Task;
 import com.aston.service.api.ProjectServiceApi;
 import com.aston.util.ProjectInvalidParameterException;
 import com.aston.util.ProjectNotFoundException;
-import com.aston.util.TaskNotFoundException;
 import com.aston.util.dto.ProjectDto;
-import com.aston.util.dto.ProjectDtoUtil;
+import com.aston.util.dto.util.ProjectDtoUtil;
+import com.aston.util.dto.TaskDto;
+import com.aston.util.dto.util.TaskDtoUtil;
 import lombok.extern.slf4j.Slf4j;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
-import static com.aston.util.dto.ProjectDtoUtil.fromDto;
-import static com.aston.util.dto.ProjectDtoUtil.fromEntity;
+import static com.aston.util.dto.util.ProjectDtoUtil.fromDto;
+import static com.aston.util.dto.util.ProjectDtoUtil.fromEntity;
 
 @Slf4j
 public class ProjectServiceImplementation implements ProjectServiceApi {
@@ -91,6 +93,22 @@ public class ProjectServiceImplementation implements ProjectServiceApi {
         projectId = projectDaoApi.deleteProject(projectId);
         return projectId;
     }
+
+    @Override
+    public Set<TaskDto> getAllTasksByProject(Long projectId) throws ProjectNotFoundException {
+        Project projectByID = projectDaoApi.getProjectById(projectId);
+        Set<TaskDto>taskDtosByProject;
+        if(projectByID!=null) {
+            taskDtosByProject = projectDaoApi.getAllTasksByProject(projectId).stream().
+                    map(TaskDtoUtil::fromEntity).collect(Collectors.toSet());
+            log.info("Get all task by project with id {} in {}",projectByID,new Date());
+            return taskDtosByProject;
+        }else{
+            log.error("Cannot get all task by project id in {}",new Date());
+            throw new ProjectNotFoundException(String.format("Project with id %s was not found",projectId));
+        }
+    }
+
     @Override
     public ProjectDto getProjectById(Long projectId) throws ProjectNotFoundException {
         ProjectDto projectDto;

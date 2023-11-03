@@ -39,7 +39,7 @@ public class UserTaskServiceImplementationTest {
         ConnectionManager connectionManager = new ConnectionManager(transactionManager);
         UserDaoApi userDaoApi = new UserDaoImplementation(sessionFactory);
         ProjectDaoApi projectDaoApi = new ProjectDaoImplementation(sessionFactory);
-        TaskDaoApi taskDaoApi = new TaskDaoImplementation(connectionManager);
+        TaskDaoApi taskDaoApi = new TaskDaoImplementation(sessionFactory);
         UserTaskDaoApi userTaskDaoApi = new UserTaskDaoImplementation(connectionManager);
         taskServiceImplementation = new TaskServiceImplementation(taskDaoApi,
                 new ProjectServiceImplementation(projectDaoApi,
@@ -73,7 +73,7 @@ public class UserTaskServiceImplementationTest {
                 .projectId(Math.toIntExact(projectId))
                 .build();
 
-        int taskId = taskServiceImplementation.createTask(taskSave);
+        Long taskId = taskServiceImplementation.createTask(taskSave);
 
         UserDto userSave = UserDto.builder()
                 .email("testsaveuser@mail.cas")
@@ -112,7 +112,7 @@ public class UserTaskServiceImplementationTest {
                 .status("Open")
                 .projectId(Math.toIntExact(projectId))
                 .build();
-        int taskId = taskServiceImplementation.createTask(taskSave);
+        Long taskId = taskServiceImplementation.createTask(taskSave);
         UserDto userSave = UserDto.builder()
                 .email("testsaveuser@mail.cas")
                 .username("usertest")
@@ -152,7 +152,7 @@ public class UserTaskServiceImplementationTest {
                 .projectId(Math.toIntExact(projectId))
                 .build();
 
-        int taskId = taskServiceImplementation.createTask(taskSave);
+        Long taskId = taskServiceImplementation.createTask(taskSave);
 
         UserDto userSave = UserDto.builder()
                 .email("testsaveuser@mail.cas")
@@ -195,7 +195,7 @@ public class UserTaskServiceImplementationTest {
                 .projectId(Math.toIntExact(projectId))
                 .build();
 
-        int taskId = taskServiceImplementation.createTask(taskSave);
+        Long taskId = taskServiceImplementation.createTask(taskSave);
 
         UserDto userSave = UserDto.builder()
                 .email("testsaveuser@mail.cas")
@@ -238,7 +238,7 @@ public class UserTaskServiceImplementationTest {
                 .projectId(Math.toIntExact(projectId))
                 .build();
 
-        int taskId = taskServiceImplementation.createTask(taskSave);
+        Long taskId = taskServiceImplementation.createTask(taskSave);
 
         UserDto userSave = UserDto.builder()
                 .email("testsaveuser@mail.cas")

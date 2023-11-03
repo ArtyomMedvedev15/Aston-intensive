@@ -50,7 +50,7 @@ public class UserTaskServiceImplementation implements UserTaskServiceApi {
                 log.info("User with id {} not found in {}",userTaskEntity.getUserId(),new Date());
                 throw new UserNotFoundException(String.format("User with id %s was not found",userTaskEntity.getUserId()));
             }
-            if(taskServiceApi.getTaskById(userTaskEntity.getTaskId())==null){
+            if(taskServiceApi.getTaskById((long) userTaskEntity.getTaskId())==null){
                 log.info("Task with id {} not found in {}",userTaskEntity.getTaskId(),new Date());
                 throw new TaskNotFoundException(String.format("Task with id %s was not found",userTaskEntity.getTaskId()));
             }
@@ -94,7 +94,7 @@ public class UserTaskServiceImplementation implements UserTaskServiceApi {
                     .collect(Collectors.toList());
             userTaskByUserList.forEach(o1->{
                 try {
-                    o1.setTaskId(taskServiceApi.getTaskById(Math.toIntExact(o1.getTaskId().getId())));
+                    o1.setTaskId(taskServiceApi.getTaskById((long) Math.toIntExact(o1.getTaskId().getId())));
                     o1.setUserId(userServiceApi.getUserById((long) Math.toIntExact(o1.getUserId().getId())));
                 } catch (SQLException | UserNotFoundException | TaskNotFoundException | ProjectNotFoundException e) {
                     e.printStackTrace();
@@ -133,7 +133,7 @@ public class UserTaskServiceImplementation implements UserTaskServiceApi {
         userTaskByUserList.forEach(o1->{
             try {
                 o1.setUserId(userServiceApi.getUserById((long) userid));
-                o1.setTaskId(taskServiceApi.getTaskById(Math.toIntExact(o1.getTaskId().getId())));
+                o1.setTaskId(taskServiceApi.getTaskById((long) Math.toIntExact(o1.getTaskId().getId())));
             } catch (SQLException | UserNotFoundException | TaskNotFoundException | ProjectNotFoundException e) {
                 e.printStackTrace();
             }

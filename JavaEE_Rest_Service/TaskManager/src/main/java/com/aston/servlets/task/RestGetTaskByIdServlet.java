@@ -34,7 +34,7 @@ public class RestGetTaskByIdServlet extends HttpServlet {
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         String taskId = req.getParameter("idTask");
         try {
-            TaskDto taskById = taskServiceApi.getTaskById(Integer.parseInt(taskId));
+            TaskDto taskById = taskServiceApi.getTaskById(Long.valueOf(taskId));
              ObjectMapper objectMapper = new ObjectMapper();
             String taskByIdJson = objectMapper.writeValueAsString(taskById);
 

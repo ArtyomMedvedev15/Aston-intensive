@@ -9,14 +9,20 @@ import com.aston.service.api.TaskServiceApi;
 import com.aston.util.ProjectNotFoundException;
 import com.aston.util.TaskInvalidParameterException;
 import com.aston.util.TaskNotFoundException;
-import com.aston.util.dto.ProjectDtoUtil;
+import com.aston.util.dto.util.ProjectDtoUtil;
 import com.aston.util.dto.TaskDto;
+import com.aston.util.dto.util.TaskDtoUtil;
 import lombok.extern.slf4j.Slf4j;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
+
+import static com.aston.util.dto.util.TaskDtoUtil.fromDto;
+import static com.aston.util.dto.util.TaskDtoUtil.fromEntity;
 
 @Slf4j
 public class TaskServiceImplementation implements TaskServiceApi {
@@ -34,9 +40,9 @@ public class TaskServiceImplementation implements TaskServiceApi {
      }
 
     @Override
-    public int createTask(TaskDto taskDtoSave) throws SQLException, TaskInvalidParameterException {
+    public Long createTask(TaskDto taskDtoSave) throws SQLException, TaskInvalidParameterException {
         Task taskEntity = fromDto(taskDtoSave);
-        int taskId = 0;
+        Long taskId;
         try {
             taskId = ValidationDto(taskEntity);
         } catch (SQLException e) {
@@ -46,8 +52,8 @@ public class TaskServiceImplementation implements TaskServiceApi {
         return taskId;
     }
 
-    private int ValidationDto(Task taskEntity) throws SQLException, TaskInvalidParameterException {
-        int taskId;
+    private Long ValidationDto(Task taskEntity) throws SQLException, TaskInvalidParameterException {
+        Long taskId;
         if((taskEntity.getTitle().length()>5 && taskEntity.getTitle().length()<256) &&
                (taskEntity.getDescription().length()>10 && taskEntity.getDescription().length()<512)&&
                (taskEntity.getStatus().length()>3 && taskEntity.getStatus().length()<50)){
@@ -59,7 +65,7 @@ public class TaskServiceImplementation implements TaskServiceApi {
     }
 
     @Override
-    public TaskDto getTaskById(int taskId) throws SQLException, TaskNotFoundException, ProjectNotFoundException {
+    public TaskDto getTaskById(Long taskId) throws SQLException, TaskNotFoundException{
         TaskDto taskDto;
         try {
             Task taskById = taskDao.getTaskById(taskId);
@@ -77,10 +83,10 @@ public class TaskServiceImplementation implements TaskServiceApi {
     }
 
     @Override
-    public List<TaskDto> getAllTasks() throws SQLException {
+    public List<TaskDto> getAllTasks(){
         List<TaskDto> taskDtoList = new ArrayList<>();
         try {
-            taskDtoList = taskDao.getAllTasks().stream().map(this::fromEntity)
+            taskDtoList = taskDao.getAllTasks().stream().map(TaskDtoUtil::fromEntity)
                     .collect(Collectors.toList());
         } catch (SQLException e) {
 
@@ -91,14 +97,17 @@ public class TaskServiceImplementation implements TaskServiceApi {
     }
 
     @Override
-    public List<TaskDto> getAllTasksByProject(int projectId) throws SQLException {
-        List<TaskDto> taskDtoListByProject = new ArrayList<>();
+    public Set<TaskDto> getAllTasksByProject(Long projectId) throws ProjectNotFoundException {
+        Set<TaskDto> taskDtoListByProject = new HashSet<>();
         try {
-             taskDtoListByProject = taskDao.getAllTasksByProject(projectId).stream().map(this::fromEntity)
-                    .collect(Collectors.toList());
+            if (projectService.getProjectById(projectId)==null) {
+                taskDtoListByProject = projectService.getAllTasksByProject(projectId);
+            }else {
+                throw new ProjectNotFoundException(String.format("Project with id %s was not found",projectId));
+            }
          } catch (SQLException e) {
              log.error("Cannot get all task by project with with exception {}",e.getMessage());
-            e.printStackTrace();
+             e.printStackTrace();
         }
         return taskDtoListByProject;
     }
@@ -106,9 +115,9 @@ public class TaskServiceImplementation implements TaskServiceApi {
 
 
     @Override
-    public int updateTask(TaskDto taskDtoUpdate) throws SQLException, TaskInvalidParameterException {
+    public Long updateTask(TaskDto taskDtoUpdate) throws SQLException, TaskInvalidParameterException {
         Task taskEntity = fromDto(taskDtoUpdate);
-        int taskId = 0;
+        Long taskId;
         try {
             taskId = ValidationDto(taskEntity);
         } catch (SQLException e) {
@@ -119,7 +128,7 @@ public class TaskServiceImplementation implements TaskServiceApi {
     }
 
     @Override
-    public int deleteTask(int taskId) throws SQLException, TaskNotFoundException {
+    public Long deleteTask(Long taskId) throws SQLException, TaskNotFoundException {
         try {
              Task taskById = taskDao.getTaskById(taskId);
             if(taskById!=null) {
@@ -134,26 +143,5 @@ public class TaskServiceImplementation implements TaskServiceApi {
         return taskId;
     }
 
-    private Task fromDto(TaskDto taskDto) {
-        Task taskEntity = new Task();
-                taskEntity.setId(taskDto.getId());
-                taskEntity.setTitle(taskDto.getTitle());
-                taskEntity.setDescription(taskDto.getDescription());
-                taskEntity.setDeadline(taskDto.getDeadline());
-                taskEntity.setStatus(taskDto.getStatus());
-                taskEntity.setProject(ProjectDtoUtil.fromDto(taskDto.getProject()));
-        return taskEntity;
-    }
 
-    private TaskDto fromEntity(Task taskEntity) {
-        TaskDto taskDto = TaskDto.builder()
-                .id(taskEntity.getId())
-                .title(taskEntity.getTitle())
-                .description(taskEntity.getDescription())
-                .deadline(taskEntity.getDeadline())
-                .status(taskEntity.getStatus())
-                .project(ProjectDtoUtil.fromEntity(taskEntity.getProject()))
-                .build();
-        return taskDto;
-    }
 }

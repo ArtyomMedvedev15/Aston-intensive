@@ -56,7 +56,7 @@ public class RestUpdateTaskServlet extends HttpServlet {
                 .status(status)
                 .projectId(projectId)
                 .build();
-        int taskId = 0;
+        Long taskId;
         try {
             taskId = taskServiceApi.updateTask(taskDtoSave);
             resp.setStatus(HttpServletResponse.SC_OK);

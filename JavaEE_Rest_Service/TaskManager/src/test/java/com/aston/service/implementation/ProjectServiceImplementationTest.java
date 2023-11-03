@@ -12,7 +12,6 @@ import com.aston.util.ConnectionPoolException;
 import com.aston.util.ProjectInvalidParameterException;
 import com.aston.util.ProjectNotFoundException;
 import com.aston.util.dto.ProjectDto;
-import lombok.extern.java.Log;
 import org.hibernate.SessionFactory;
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -35,7 +34,7 @@ public class ProjectServiceImplementationTest {
         TransactionManager transactionManager = new TransactionManagerImpl(connectionPool);
         ConnectionManager connectionManager = new ConnectionManager(transactionManager);
         ProjectDaoApi projectDaoApi = new ProjectDaoImplementation(sessionFactory);
-        TaskDaoApi taskDaoApi = new TaskDaoImplementation(connectionManager);
+        TaskDaoApi taskDaoApi = new TaskDaoImplementation(sessionFactory);
         UserTaskDaoApi userTaskDaoApi = new UserTaskDaoImplementation(connectionManager);
 
         projectServiceImplementation = new ProjectServiceImplementation(projectDaoApi,connectionManager,taskDaoApi,userTaskDaoApi);

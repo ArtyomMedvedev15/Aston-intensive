@@ -7,12 +7,13 @@ import com.aston.util.dto.TaskDto;
 
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Set;
 
 public interface TaskServiceApi {
-    int createTask(TaskDto taskDtoSave) throws SQLException, TaskInvalidParameterException;
-    TaskDto getTaskById(int taskId) throws SQLException, TaskNotFoundException, ProjectNotFoundException;
+    Long createTask(TaskDto taskDtoSave) throws SQLException, TaskInvalidParameterException;
+    TaskDto getTaskById(Long taskId) throws SQLException, TaskNotFoundException, ProjectNotFoundException;
     List<TaskDto> getAllTasks() throws SQLException;
-    List<TaskDto> getAllTasksByProject(int projectId) throws SQLException;
-    int updateTask(TaskDto taskDtoUpdate) throws SQLException, TaskInvalidParameterException;
-    int deleteTask(int taskId) throws SQLException, TaskNotFoundException;
+    Set<TaskDto> getAllTasksByProject(Long projectId) throws SQLException, ProjectNotFoundException;
+    Long updateTask(TaskDto taskDtoUpdate) throws SQLException, TaskInvalidParameterException;
+    Long deleteTask(Long taskId) throws SQLException, TaskNotFoundException;
 }

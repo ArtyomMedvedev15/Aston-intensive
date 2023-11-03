@@ -30,7 +30,7 @@ public class RestCreateTaskServlet extends HttpServlet {
         this.taskServiceApi = (TaskServiceImplementation) taskService;
     }
     @Override
-    protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+    protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         BufferedReader reader = req.getReader();
         StringBuilder jsonPayload = new StringBuilder();
         String line;
@@ -54,7 +54,7 @@ public class RestCreateTaskServlet extends HttpServlet {
                 .status(status)
                 .projectId(projectId)
                 .build();
-        int taskId = 0;
+        Long taskId;
         try {
             taskId = taskServiceApi.createTask(taskDtoSave);
             resp.setStatus(HttpServletResponse.SC_OK);

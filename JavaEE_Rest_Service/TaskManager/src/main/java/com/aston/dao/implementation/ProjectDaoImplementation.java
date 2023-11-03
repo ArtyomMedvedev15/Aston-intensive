@@ -4,7 +4,10 @@ import com.aston.dao.api.ProjectDaoApi;
 import com.aston.dao.api.TransactionManager;
 import com.aston.dao.datasource.ConnectionManager;
 import com.aston.entities.Project;
+import com.aston.entities.Task;
 import com.aston.entities.User;
+import com.aston.util.dto.TaskDto;
+import jakarta.persistence.EntityGraph;
 import jakarta.persistence.TypedQuery;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
@@ -17,9 +20,8 @@ import org.hibernate.Transaction;
 import org.hibernate.query.Query;
 
 import java.sql.*;
-import java.util.ArrayList;
+import java.util.*;
 import java.util.Date;
-import java.util.List;
 
 
 @Slf4j
@@ -28,7 +30,6 @@ public class ProjectDaoImplementation implements ProjectDaoApi {
     public ProjectDaoImplementation(SessionFactory sessionFactory) {
         this.sessionFactory = sessionFactory;
     }
-
 
     @Override
     public Long createProject(Project project){
@@ -42,7 +43,7 @@ public class ProjectDaoImplementation implements ProjectDaoApi {
                 return project.getId();
             } catch (Exception ex) {
                 transaction.rollback();
-                log.error("Error while saving user: " + ex.getMessage(), ex);
+                log.error("Error while saving project: " + ex.getMessage(), ex);
                 ex.printStackTrace();
                 return (long) -1;
             }
@@ -91,13 +92,37 @@ public class ProjectDaoImplementation implements ProjectDaoApi {
     }
 
     @Override
+    public Set<Task> getAllTasksByProject(Long projectId) {
+        try (Session session = sessionFactory.openSession()) {
+            EntityGraph<Project> graph = session.createEntityGraph(Project.class);
+            graph.addAttributeNodes("tasks");
+
+            Map<String, Object> hints = new HashMap<>();
+            hints.put("javax.persistence.fetchgraph", graph);
+
+            Project project = session.find(Project.class, projectId, hints);
+
+            if (project != null) {
+                log.info("Get project with id {} in {}", projectId, new Date());
+                return project.getTasks();
+            } else {
+                log.info("Project not found with id {}", projectId);
+                return new HashSet<>();
+            }
+        } catch (Exception e) {
+            log.error("Error getting tasks by project ID", e);
+            return new HashSet<>();
+        }
+    }
+
+    @Override
     public Project getProjectById(Long projectId){
             Project project = null;
             try (Session session = sessionFactory.openSession()) {
                 project = session.get(Project.class, projectId);
                 log.info("Get project with id {} in {}",projectId,new Date());
             } catch (Exception e) {
-                log.error("Error getting user by ID", e);
+                log.error("Error getting task by ID", e);
             }
             log.info("Get project by id {} in {}", project, new Date());
             return project;
