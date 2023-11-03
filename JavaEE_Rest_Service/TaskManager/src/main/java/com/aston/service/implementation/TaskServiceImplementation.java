@@ -9,6 +9,7 @@ import com.aston.service.api.TaskServiceApi;
 import com.aston.util.ProjectNotFoundException;
 import com.aston.util.TaskInvalidParameterException;
 import com.aston.util.TaskNotFoundException;
+import com.aston.util.dto.ProjectDtoUtil;
 import com.aston.util.dto.TaskDto;
 import lombok.extern.slf4j.Slf4j;
 
@@ -64,7 +65,7 @@ public class TaskServiceImplementation implements TaskServiceApi {
             Task taskById = taskDao.getTaskById(taskId);
             if(taskById!=null) {
                 taskDto = fromEntity(taskById);
-                taskDto.setProject(projectService.getProjectById(taskById.getProjectId()));
+                taskDto.setProject(ProjectDtoUtil.fromEntity(taskById.getProject()));
             }else{
                 throw new TaskNotFoundException(String.format("Task with id %s was not found",taskId));
             }
@@ -81,13 +82,6 @@ public class TaskServiceImplementation implements TaskServiceApi {
         try {
             taskDtoList = taskDao.getAllTasks().stream().map(this::fromEntity)
                     .collect(Collectors.toList());
-            taskDtoList.forEach(o1-> {
-                try {
-                    o1.setProject(projectService.getProjectById(o1.getProjectId()));
-                } catch (SQLException | ProjectNotFoundException e) {
-                    e.printStackTrace();
-                }
-            });
         } catch (SQLException e) {
 
             log.error("Cannot get all task with exception {}",e.getMessage());
@@ -102,7 +96,6 @@ public class TaskServiceImplementation implements TaskServiceApi {
         try {
              taskDtoListByProject = taskDao.getAllTasksByProject(projectId).stream().map(this::fromEntity)
                     .collect(Collectors.toList());
-            setProjectDto(taskDtoListByProject);
          } catch (SQLException e) {
              log.error("Cannot get all task by project with with exception {}",e.getMessage());
             e.printStackTrace();
@@ -141,24 +134,14 @@ public class TaskServiceImplementation implements TaskServiceApi {
         return taskId;
     }
 
-    private void setProjectDto(List<TaskDto> taskDtoList) {
-        taskDtoList.forEach(o1-> {
-            try {
-                o1.setProject(projectService.getProjectById(o1.getProjectId()));
-            } catch (SQLException | ProjectNotFoundException e) {
-                e.printStackTrace();
-            }
-        });
-    }
     private Task fromDto(TaskDto taskDto) {
-        Task taskEntity = Task.builder()
-                .id(taskDto.getId())
-                .title(taskDto.getTitle())
-                .description(taskDto.getDescription())
-                .deadline(taskDto.getDeadline())
-                .status(taskDto.getStatus())
-                .projectId(taskDto.getProjectId())
-                .build();
+        Task taskEntity = new Task();
+                taskEntity.setId(taskDto.getId());
+                taskEntity.setTitle(taskDto.getTitle());
+                taskEntity.setDescription(taskDto.getDescription());
+                taskEntity.setDeadline(taskDto.getDeadline());
+                taskEntity.setStatus(taskDto.getStatus());
+                taskEntity.setProject(ProjectDtoUtil.fromDto(taskDto.getProject()));
         return taskEntity;
     }
 
@@ -169,7 +152,7 @@ public class TaskServiceImplementation implements TaskServiceApi {
                 .description(taskEntity.getDescription())
                 .deadline(taskEntity.getDeadline())
                 .status(taskEntity.getStatus())
-                .projectId(taskEntity.getProjectId())
+                .project(ProjectDtoUtil.fromEntity(taskEntity.getProject()))
                 .build();
         return taskDto;
     }

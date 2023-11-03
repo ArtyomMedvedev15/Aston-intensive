@@ -10,6 +10,7 @@ import com.aston.entities.Task;
 import com.aston.entities.User;
 import com.aston.entities.UserTask;
 import com.aston.util.ConnectionPoolException;
+import org.hibernate.SessionFactory;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -25,6 +26,7 @@ public class UserTaskDaoImplementationTest {
     private static UserDaoApi userDaoApi;
     private static TaskDaoApi taskDaoApi;
     private static ProjectDaoApi projectDaoApi;
+    private static SessionFactory sessionFactory;
     @BeforeClass
     public static void init() throws ConnectionPoolException {
         connectionPool = ConnectionPoolImpl.getInstance();
@@ -32,7 +34,7 @@ public class UserTaskDaoImplementationTest {
         TransactionManager transactionManager = new TransactionManagerImpl(connectionPool);
         ConnectionManager connectionManager = new ConnectionManager(transactionManager);
         taskDaoApi = new TaskDaoImplementation(connectionManager);
-        userDaoApi = new UserDaoImplementation(connectionManager);
+        userDaoApi = new UserDaoImplementation(connectionManager, sessionFactory);
         projectDaoApi = new ProjectDaoImplementation(connectionManager);
         userTaskDaoImplementation = new UserTaskDaoImplementation(connectionManager);
     }
@@ -43,32 +45,30 @@ public class UserTaskDaoImplementationTest {
     }
     @Test
     public void CreateUserTaskTest_ReturnTrue() throws SQLException {
-        Project projectSave = Project.builder()
-                .name("TestProject")
-                .description("TestProject")
-                .build();
+        Project projectSave = new Project();
+        projectSave.setName("TestProject");
+        projectSave.setDescription("TestProject");
 
         int projectId = projectDaoApi.createProject(projectSave);
 
-        Task taskSave = Task.builder()
-                .title("Test")
-                .description("Test")
-                .deadline(new Date(new java.util.Date().getTime()))
-                .status("Open")
-                .projectId(projectId)
-                .build();
+        Task taskSave = new Task();
+        taskSave.setTitle("Test");
+        taskSave.setDescription("Test");
+        taskSave.setDeadline(new Date(new java.util.Date().getTime()));
+        taskSave.setStatus("Open");
+
 
         int taskId = taskDaoApi.createTask(taskSave);
 
-        User userSave = User.builder()
-                .email("testsaveuser@mail.cas")
-                .username("usertest")
-                .build();
+        User userSave = new User();
+        userSave.setEmail("testsaveuser@mail.cas");
+        userSave.setUsername("usertest");
 
-        int userId = userDaoApi.createUser(userSave);
+
+        Long userId = userDaoApi.createUser(userSave);
 
         UserTask userTaskSave = UserTask.builder()
-                .userId(userId)
+                .userId(Math.toIntExact(userId))
                 .taskId(taskId)
                 .build();
 
@@ -78,36 +78,33 @@ public class UserTaskDaoImplementationTest {
 
         taskDaoApi.deleteTask(taskId);
         projectDaoApi.deleteProject(projectId);
-        userDaoApi.deleteUser(userId);
+        userDaoApi.deleteUser(Math.toIntExact(userId));
         userTaskDaoImplementation.deleteUserTask(userTaskSaveResult);
 
     }
 
     @Test
     public void GetAllUserTaskByUserTest_WithUserId777_ReturnTrue() throws SQLException {
-        Project projectSave = Project.builder()
-                .name("TestProject")
-                .description("TestProject")
-                .build();
+        Project projectSave = new Project();
+        projectSave.setName("TestProject");
+        projectSave.setDescription("TestProject");
 
         int projectId = projectDaoApi.createProject(projectSave);
 
-        Task taskSave = Task.builder()
-                .title("Test")
-                .description("Test")
-                .deadline(new Date(new java.util.Date().getTime()))
-                .status("Open")
-                .projectId(projectId)
-                .build();
+        Task taskSave = new Task();
+        taskSave.setTitle("Test");
+        taskSave.setDescription("Test");
+        taskSave.setDeadline(new Date(new java.util.Date().getTime()));
+        taskSave.setStatus("Open");
+
 
         int taskId = taskDaoApi.createTask(taskSave);
 
-        User userSave = User.builder()
-                .email("testsaveuser@mail.cas")
-                .username("usertest")
-                .build();
+        User userSave = new User();
+        userSave.setEmail("testsaveuser@mail.cas");
+        userSave.setUsername("usertest");
 
-        int userId = userDaoApi.createUser(userSave);
+        int userId = Math.toIntExact(userDaoApi.createUser(userSave));
 
         UserTask userTaskSave = UserTask.builder()
                 .userId(userId)
@@ -127,29 +124,25 @@ public class UserTaskDaoImplementationTest {
 
     @Test
     public void GetAllUsersTaskTest_ReturnTrue() throws SQLException {
-        Project projectSave = Project.builder()
-                .name("TestProject")
-                .description("TestProject")
-                .build();
+        Project projectSave = new Project();
+        projectSave.setName("TestProject");
+        projectSave.setDescription("TestProject");
 
         int projectId = projectDaoApi.createProject(projectSave);
 
-        Task taskSave = Task.builder()
-                .title("Test")
-                .description("Test")
-                .deadline(new Date(new java.util.Date().getTime()))
-                .status("Open")
-                .projectId(projectId)
-                .build();
+        Task taskSave = new Task();
+        taskSave.setTitle("Test");
+        taskSave.setDescription("Test");
+        taskSave.setDeadline(new Date(new java.util.Date().getTime()));
+        taskSave.setStatus("Open");
 
         int taskId = taskDaoApi.createTask(taskSave);
 
-        User userSave = User.builder()
-                .email("testsaveuser@mail.cas")
-                .username("usertest")
-                .build();
+        User userSave = new User();
+        userSave.setEmail("testsaveuser@mail.cas");
+        userSave.setUsername("usertest");
 
-        int userId = userDaoApi.createUser(userSave);
+        int userId = Math.toIntExact(userDaoApi.createUser(userSave));
 
         UserTask userTaskSave = UserTask.builder()
                 .userId(userId)
@@ -169,29 +162,26 @@ public class UserTaskDaoImplementationTest {
 
     @Test
     public void DeleteUserTaskTest_ReturnTrue() throws SQLException {
-        Project projectSave = Project.builder()
-                .name("TestProject")
-                .description("TestProject")
-                .build();
+        Project projectSave = new Project();
+        projectSave.setName("TestProject");
+        projectSave.setDescription("TestProject");
 
         int projectId = projectDaoApi.createProject(projectSave);
 
-        Task taskSave = Task.builder()
-                .title("Test")
-                .description("Test")
-                .deadline(new Date(new java.util.Date().getTime()))
-                .status("Open")
-                .projectId(projectId)
-                .build();
+        Task taskSave = new Task();
+        taskSave.setTitle("Test");
+        taskSave.setDescription("Test");
+        taskSave.setDeadline(new Date(new java.util.Date().getTime()));
+        taskSave.setStatus("Open");
+
 
         int taskId = taskDaoApi.createTask(taskSave);
 
-        User userSave = User.builder()
-                .email("testsaveuser@mail.cas")
-                .username("usertest")
-                .build();
+        User userSave = new User();
+        userSave.setEmail("testsaveuser@mail.cas");
+        userSave.setUsername("usertest");
 
-        int userId = userDaoApi.createUser(userSave);
+        int userId = Math.toIntExact(userDaoApi.createUser(userSave));
 
         UserTask userTaskSave = UserTask.builder()
                 .userId(userId)

@@ -35,7 +35,7 @@ public class TaskDaoImplementation implements TaskDaoApi {
             pst.setString(2, task.getDescription());
             pst.setDate(3, task.getDeadline());
             pst.setString(4, task.getStatus());
-            pst.setLong(5, task.getProjectId());
+
 
             pst.executeUpdate();
             try (ResultSet rs = pst.getGeneratedKeys()) {
@@ -119,8 +119,7 @@ public class TaskDaoImplementation implements TaskDaoApi {
             pst.setString(2, task.getDescription());
             pst.setDate(3, task.getDeadline());
             pst.setString(4, task.getStatus());
-            pst.setLong(5, task.getProjectId());
-            pst.setLong(6,task.getId());
+             pst.setLong(6,task.getId());
             rowsUpdated = pst.executeUpdate();
         } catch (SQLException ex) {
             log.error(ex.getMessage(), ex);
@@ -147,13 +146,12 @@ public class TaskDaoImplementation implements TaskDaoApi {
     }
 
     private Task parseTaskFromResultSet(ResultSet rs) throws SQLException {
-        Task taskMapper = Task.builder().build();
+        Task taskMapper = new Task();
         taskMapper.setId((long) Integer.parseInt(rs.getString("id")));
         taskMapper.setTitle(rs.getString("title"));
         taskMapper.setDescription(rs.getString("description"));
         taskMapper.setDeadline(rs.getDate("deadline"));
         taskMapper.setStatus(rs.getString("status"));
-        taskMapper.setProjectId(rs.getInt("projectId"));
-        return taskMapper;
+         return taskMapper;
     }
 }

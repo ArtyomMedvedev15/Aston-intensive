@@ -1,26 +1,26 @@
 package com.aston.entities;
 
 import jakarta.persistence.*;
-import lombok.Builder;
+
 import lombok.Data;
 
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
+
 import java.util.HashSet;
 import java.util.Set;
 
 @Data
 @Entity
+@Table(name = "users", schema = "taskmanager")
 public class User {
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "taskmanager_sequence")
-    @SequenceGenerator(name = "taskmanager_sequence", sequenceName = "taskmanager_sequence")
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "taskmanager.taskmanager_sequence")
+    @SequenceGenerator(name = "taskmanager.taskmanager_sequence", sequenceName = "taskmanager.taskmanager_sequence",allocationSize = 1)
     private Long id;
     private String username;
     private String email;
-    @ManyToMany(fetch = FetchType.LAZY)
+    @ManyToMany(fetch = FetchType.LAZY,cascade = CascadeType.ALL)
     @JoinTable(
-            name = "user_task",
+            name = "user_task",schema = "taskmanager",
             joinColumns = @JoinColumn(name = "user_id"),
             inverseJoinColumns = @JoinColumn(name = "task_id")
     )

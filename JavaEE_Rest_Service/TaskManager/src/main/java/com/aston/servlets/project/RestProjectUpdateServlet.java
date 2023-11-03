@@ -39,7 +39,7 @@ public class RestProjectUpdateServlet extends HttpServlet {
         ObjectMapper objectMapper = new ObjectMapper();
         JsonNode jsonNode = objectMapper.readTree(jsonPayload.toString());
 
-        int id = jsonNode.get("id").asInt();
+        Long id = jsonNode.get("id").asLong();
         String name = jsonNode.get("name").asText();
         String description = jsonNode.get("description").asText();
 

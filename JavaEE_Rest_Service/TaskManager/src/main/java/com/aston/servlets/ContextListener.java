@@ -16,6 +16,10 @@ import com.aston.service.implementation.UserTaskServiceImplementation;
 import com.aston.util.ConnectionPoolException;
 import lombok.extern.slf4j.Slf4j;
 import org.flywaydb.core.Flyway;
+import org.hibernate.SessionFactory;
+import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
+import org.hibernate.cfg.Configuration;
+import org.hibernate.service.ServiceRegistry;
 
 import javax.servlet.ServletContext;
 import javax.servlet.ServletContextEvent;
@@ -50,15 +54,19 @@ public class ContextListener implements ServletContextListener {
 
         Flyway flyway = Flyway.configure()
                 .dataSource("jdbc:postgresql://localhost:5432/postgres", "postgres", "postgres")
-                .locations("classpath:db/migration") // Расположение SQL-скриптов миграции
+                .schemas("taskmanager")
+                .locations("classpath:db/migration")
                 .load();
         flyway.migrate();
 
         final ServletContext servletContext =
                 servletContextEvent.getServletContext();
 
+        Configuration configuration = new Configuration();
+        configuration.configure("hibernate.cfg.xml");
+        SessionFactory sessionFactory = configuration.buildSessionFactory();
 
-        this.userDaoApi = new UserDaoImplementation(connectionManager);
+        this.userDaoApi = new UserDaoImplementation(connectionManager, sessionFactory);
         this.taskDaoApi = new TaskDaoImplementation(connectionManager);
         this.projectDaoApi = new ProjectDaoImplementation(connectionManager);
         this.userTaskDaoApi = new UserTaskDaoImplementation(connectionManager);

@@ -13,6 +13,7 @@ import com.aston.util.TransactionException;
 import com.aston.util.UserInvalidParameterException;
 import com.aston.util.UserNotFoundException;
 import com.aston.util.dto.UserDto;
+import org.hibernate.SessionFactory;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -27,14 +28,14 @@ import static org.junit.Assert.assertTrue;
 public class UserServiceImplementationTest {
     private static UserServiceImplementation userServiceImplementation;
     private static ConnectionPool connectionPool;
-
+    private static SessionFactory sessionFactory;
     @BeforeClass
     public static void init() throws ConnectionPoolException {
         connectionPool = ConnectionPoolImpl.getInstance();
         connectionPool.init("database");
         TransactionManager transactionManager = new TransactionManagerImpl(connectionPool);
         ConnectionManager connectionManager = new ConnectionManager(transactionManager);
-        UserDaoApi userDaoApi = new UserDaoImplementation(connectionManager);
+        UserDaoApi userDaoApi = new UserDaoImplementation(connectionManager, sessionFactory);
         userServiceImplementation = new UserServiceImplementation(userDaoApi,connectionManager);
     }
 

@@ -3,7 +3,14 @@ package com.aston.dao.implementation;
 import com.aston.dao.api.UserDaoApi;
 import com.aston.dao.datasource.ConnectionManager;
 import com.aston.entities.User;
+import jakarta.persistence.TypedQuery;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Root;
 import lombok.extern.slf4j.Slf4j;
+import org.hibernate.Session;
+import org.hibernate.SessionFactory;
+import org.hibernate.Transaction;
 
 import java.sql.*;
 import java.util.ArrayList;
@@ -20,29 +27,30 @@ public class UserDaoImplementation implements UserDaoApi {
     private static final String DELETE_USER_QUERY = "DELETE FROM taskmaneger.users WHERE id=?";
 
      private final ConnectionManager connectionManager;
+     private final SessionFactory sessionFactory;
 
-    public UserDaoImplementation(ConnectionManager connectionManager) {
+    public UserDaoImplementation(ConnectionManager connectionManager, SessionFactory sessionFactory) {
         this.connectionManager = connectionManager;
+        this.sessionFactory = sessionFactory;
     }
 
 
     @Override
-    public int createUser(User user) throws SQLException {
-
-        try (Connection connection = connectionManager.getConnection();
-                PreparedStatement pst = connection.prepareStatement(INSERT_USER_QUERY, Statement.RETURN_GENERATED_KEYS)) {
-            pst.setString(1, user.getUsername());
-            pst.setString(2, user.getEmail());
-            pst.executeUpdate();
-            try (ResultSet rs = pst.getGeneratedKeys()) {
-                rs.next();
-                int id = rs.getInt(1);
-                log.info("Save new user with id {} in {}",id,new Date());
-                return id;
+    public Long createUser(User user) {
+        try (Session session = sessionFactory.openSession()) {
+            Transaction transaction = session.beginTransaction();
+            try {
+                session.persist(user);
+                session.flush();
+                transaction.commit();
+                log.info("Save new user with id {} in {}", user.getId(), new Date());
+                return user.getId();
+            } catch (Exception ex) {
+                transaction.rollback();
+                log.error("Error while saving user: " + ex.getMessage(), ex);
+                ex.printStackTrace();
+                return (long) -1;
             }
-        } catch (SQLException ex) {
-            log.error(ex.getMessage(), ex);
-            throw ex;
         }
     }
     @Override
@@ -122,27 +130,28 @@ public class UserDaoImplementation implements UserDaoApi {
 
     @Override
     public List<User> getAllUsers() throws SQLException {
+        try (Session session = sessionFactory.openSession()) {
+            CriteriaBuilder criteriaBuilder = session.getCriteriaBuilder();
+            CriteriaQuery<User> query = criteriaBuilder.createQuery(User.class);
+            Root<User> root = query.from(User.class);
+            query.select(root);
 
-        List<User> usersList = new ArrayList<>();
-        try ( Connection connection = connectionManager.getConnection();
-                PreparedStatement pst = connection.prepareStatement(SELECT_ALL_USERS_QUERY)) {
-            try (ResultSet rs = pst.executeQuery()) {
-                while (rs.next()) {
-                    usersList.add(parseUserFromResultSet(rs));
-                }
-            }
-        } catch (SQLException ex) {
+            TypedQuery<User> typedQuery = session.createQuery(query);
+            List<User> usersList = typedQuery.getResultList();
+
+            log.info("Get all user list in {}", new Date());
+            return usersList;
+        } catch (Exception ex) {
             log.error(ex.getMessage(), ex);
+            ex.printStackTrace();
             throw ex;
         }
-        log.info("Get all user list in {}", new Date());
-        return usersList;
     }
 
 
 
     private User parseUserFromResultSet(ResultSet rs) throws SQLException {
-        User userMapper = User.builder().build();
+        User userMapper = new User();
         userMapper.setId((long) Integer.parseInt(rs.getString("id")));
         userMapper.setUsername(rs.getString("username"));
         userMapper.setEmail(rs.getString("email"));

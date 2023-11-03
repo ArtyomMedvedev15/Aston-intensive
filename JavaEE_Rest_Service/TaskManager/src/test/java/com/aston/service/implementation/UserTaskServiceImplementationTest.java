@@ -11,6 +11,7 @@ import com.aston.dao.implementation.UserDaoImplementation;
 import com.aston.dao.implementation.UserTaskDaoImplementation;
 import com.aston.util.*;
 import com.aston.util.dto.*;
+import org.hibernate.SessionFactory;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -29,13 +30,14 @@ public class UserTaskServiceImplementationTest {
 
     private static TaskServiceImplementation taskServiceImplementation;
     private static ConnectionPool connectionPool;
+    private static SessionFactory sessionFactory;
     @BeforeClass
     public static void init() throws ConnectionPoolException {
         connectionPool = ConnectionPoolImpl.getInstance();
         connectionPool.init("database");
         TransactionManager transactionManager = new TransactionManagerImpl(connectionPool);
         ConnectionManager connectionManager = new ConnectionManager(transactionManager);
-        UserDaoApi userDaoApi = new UserDaoImplementation(connectionManager);
+        UserDaoApi userDaoApi = new UserDaoImplementation(connectionManager, sessionFactory);
         ProjectDaoApi projectDaoApi = new ProjectDaoImplementation(connectionManager);
         TaskDaoApi taskDaoApi = new TaskDaoImplementation(connectionManager);
         UserTaskDaoApi userTaskDaoApi = new UserTaskDaoImplementation(connectionManager);

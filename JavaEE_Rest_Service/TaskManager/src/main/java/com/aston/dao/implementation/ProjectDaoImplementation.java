@@ -141,11 +141,10 @@ public class ProjectDaoImplementation implements ProjectDaoApi {
     }
 
     private Project parseProjectFromResultSet(ResultSet rs) throws SQLException {
-        Project projectMapper = Project.builder()
-                .id(Integer.parseInt(rs.getString("id")))
-                .name(rs.getString("name"))
-                .description(rs.getString("description"))
-                .build();
+        Project projectMapper = new Project();
+        projectMapper.setId(Long.parseLong(rs.getString("id")));
+        projectMapper.setName(rs.getString("name"));
+        projectMapper.setDescription(rs.getString("description"));
         return projectMapper;
     }
 }

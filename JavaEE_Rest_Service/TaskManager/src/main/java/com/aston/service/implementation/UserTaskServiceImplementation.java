@@ -56,7 +56,7 @@ public class UserTaskServiceImplementation implements UserTaskServiceApi {
             }
             if(userTaskDao.getAllUserTaskByUser(userTaskEntity.getUserId()).stream()
                     .anyMatch(o1->o1.getTaskId()==userTaskEntity.getTaskId())){
-                log.info("Task with id {} was already added to user with {} in {}",userTaskEntity.getTaskId(),userTaskEntity.getUserId(),new Date());
+                log.info("Task was already added to user with {} in {}",userTaskEntity.getUserId(),new Date());
                 throw new UserTaskAlreadyExistsException(String.format("Task with id %s already add to user with id %s",
                         userTaskEntity.getTaskId(),userTaskEntity.getUserId()));
             }

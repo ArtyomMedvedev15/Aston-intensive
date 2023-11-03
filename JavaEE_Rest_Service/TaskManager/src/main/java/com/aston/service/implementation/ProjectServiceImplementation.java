@@ -149,11 +149,10 @@ public class ProjectServiceImplementation implements ProjectServiceApi {
 
 
     private Project fromDto(ProjectDto projectDto) {
-        Project projectEntity = Project.builder()
-                .id(projectDto.getId())
-                .name(projectDto.getName())
-                .description(projectDto.getDescription())
-                .build();
+        Project projectEntity = new Project();
+                projectEntity.setId(projectDto.getId());
+                projectEntity.setName(projectDto.getName());
+                projectEntity.setDescription(projectDto.getDescription());
         return projectEntity;
     }
 

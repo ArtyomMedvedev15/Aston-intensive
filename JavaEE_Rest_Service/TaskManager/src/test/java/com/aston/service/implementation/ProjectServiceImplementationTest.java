@@ -67,7 +67,7 @@ public class ProjectServiceImplementationTest {
         int projectSaveId = projectServiceImplementation.createProject(projectDtoSave);
 
         ProjectDto projectDtoUpdate = ProjectDto.builder()
-                .id(projectSaveId)
+                .id((long) projectSaveId)
                 .name("Update")
                 .description("TestProject")
                 .build();

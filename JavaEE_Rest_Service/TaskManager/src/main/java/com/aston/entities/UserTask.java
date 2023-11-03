@@ -9,4 +9,5 @@ public class UserTask {
     private int id;
     private int userId;
     private int taskId;
+
 }

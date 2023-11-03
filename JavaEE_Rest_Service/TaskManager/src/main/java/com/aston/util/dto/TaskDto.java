@@ -14,6 +14,6 @@ public class TaskDto {
     private String description;
     private Date deadline;
     private String status;
-    private int projectId;
     private ProjectDto project;
+    private int projectId;
 }

@@ -35,10 +35,10 @@ public class ProjectDaoImplementationTest {
 
     @Test
     public void CreateProjectTest_ReturnTrue() throws SQLException {
-        Project projectSave = Project.builder()
-                .name("TestProject")
-                .description("TestProject")
-                .build();
+        Project projectSave = new Project();
+                projectSave.setName("TestProject");
+                projectSave.setDescription("TestProject");
+
 
         int projectSaveResult = projectDaoImplementation.createProject(projectSave);
 
@@ -50,11 +50,11 @@ public class ProjectDaoImplementationTest {
 
     @Test
     public void UpdateProjectTest_ReturnTrue() throws SQLException {
-        Project projectUpdate = Project.builder()
-                .id(777)
-                .name("Updated")
-                .description("Update")
-                .build();
+
+        Project projectUpdate = new Project();
+        projectUpdate.setId(777L);
+        projectUpdate.setName("Updated");
+        projectUpdate.setDescription("Update");
 
         int projectUpdateResult = projectDaoImplementation.updateProject(projectUpdate);
 
@@ -63,10 +63,9 @@ public class ProjectDaoImplementationTest {
 
     @Test
     public void DeleteProjectTest_ReturnTrue() throws SQLException {
-        Project projectForDelete = Project.builder()
-                .name("TestProject")
-                .description("TestProject")
-                .build();
+        Project projectForDelete = new Project();
+        projectForDelete.setName("TestProject");
+        projectForDelete.setDescription("TestProject");
 
         int projectDelete = projectDaoImplementation.createProject(projectForDelete);
 

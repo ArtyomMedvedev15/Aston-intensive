@@ -33,7 +33,7 @@ public class UserServiceImplementation implements UserServiceApi {
         userEntity = ValidateUserDto(userSaveDto);
         int userId = 0;
         try {
-             userId = userDaoApi.createUser(userEntity);
+             userId = Math.toIntExact(userDaoApi.createUser(userEntity));
          } catch (SQLException e) {
             log.error("Cannot save user get exception {}", e.getMessage());
             throw e;
@@ -131,11 +131,10 @@ public class UserServiceImplementation implements UserServiceApi {
 
 
     private User fromDto(UserDto dto) {
-        User userEntity = User.builder()
-                .id(dto.getId())
-                .username(dto.getUsername())
-                .email(dto.getEmail())
-                .build();
+        User userEntity = new User();
+                userEntity.setId(dto.getId());
+                userEntity.setUsername(dto.getUsername());
+                userEntity.setEmail(dto.getEmail());
         return userEntity;
     }
 

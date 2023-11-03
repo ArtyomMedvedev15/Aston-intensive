@@ -6,6 +6,7 @@ import com.aston.dao.api.TransactionManager;
 import com.aston.dao.datasource.ConnectionManager;
 import com.aston.dao.datasource.ConnectionPoolImpl;
 import com.aston.dao.datasource.TransactionManagerImpl;
+import com.aston.entities.Project;
 import com.aston.entities.Task;
 import com.aston.util.ConnectionPoolException;
 import org.junit.AfterClass;
@@ -37,13 +38,14 @@ public class TaskDaoImplementationTest {
 
     @Test
     public void CreateTaskTest_ReturnTrue() throws SQLException {
-        Task taskSave = Task.builder()
-                .title("Test")
-                .description("Test")
-                .deadline(new Date(new java.util.Date().getTime()))
-                .status("Open")
-                .projectId(777)
-                .build();
+        Project project = new Project();
+        project.setId(777L);
+        Task taskSave = new Task();
+                taskSave.setTitle("Test");
+                taskSave.setDescription("Test");
+                taskSave.setDeadline(new Date(new java.util.Date().getTime()));
+                taskSave.setStatus("Open");
+                taskSave.setProject(project);
 
         int taskSaveResult = taskDaoImplementation.createTask(taskSave);
 
@@ -72,14 +74,15 @@ public class TaskDaoImplementationTest {
 
     @Test
     public void UpdateTaskTest_WithId778_ReturnTrue() throws SQLException {
-        Task taskUpdate = Task.builder()
-                .id(778L)
-                .title("Update")
-                .description("Test")
-                .deadline(new Date(new java.util.Date().getTime()))
-                .status("Open")
-                .projectId(778)
-                .build();
+        Project project = new Project();
+        project.setId(777L);
+        Task taskUpdate = new Task();
+        taskUpdate.setId(778L);
+        taskUpdate.setTitle("Update");
+        taskUpdate.setDescription("Test");
+        taskUpdate.setDeadline(new Date(new java.util.Date().getTime()));
+        taskUpdate.setStatus("Open");
+        taskUpdate.setProject(project);
 
         int taskUpdateResult = taskDaoImplementation.updateTask(taskUpdate);
         Assert.assertTrue(taskUpdateResult>0);
@@ -87,13 +90,14 @@ public class TaskDaoImplementationTest {
 
     @Test
     public void DeleteTaskTest_ReturnTrue() throws SQLException {
-        Task taskSave = Task.builder()
-                .title("Test")
-                .description("Test")
-                .deadline(new Date(new java.util.Date().getTime()))
-                .status("Open")
-                .projectId(777)
-                .build();
+        Project project = new Project();
+        project.setId(777L);
+        Task taskSave = new Task();
+        taskSave.setTitle("Test");
+        taskSave.setDescription("Test");
+        taskSave.setDeadline(new Date(new java.util.Date().getTime()));
+        taskSave.setStatus("Open");
+        taskSave.setProject(project);
 
         int taskDeleteId = taskDaoImplementation.createTask(taskSave);
         int deleteTaskResult = taskDaoImplementation.deleteTask(taskDeleteId);
