@@ -7,7 +7,6 @@ import com.aston.dao.datasource.ConnectionPoolImpl;
 import com.aston.dao.datasource.TransactionManagerImpl;
 import com.aston.dao.implementation.ProjectDaoImplementation;
 import com.aston.dao.implementation.TaskDaoImplementation;
-import com.aston.dao.implementation.UserTaskDaoImplementation;
 import com.aston.util.ConnectionPoolException;
 import com.aston.util.ProjectInvalidParameterException;
 import com.aston.util.ProjectNotFoundException;
@@ -35,7 +34,7 @@ public class ProjectServiceImplementationTest {
         ConnectionManager connectionManager = new ConnectionManager(transactionManager);
         ProjectDaoApi projectDaoApi = new ProjectDaoImplementation(sessionFactory);
         TaskDaoApi taskDaoApi = new TaskDaoImplementation(sessionFactory);
-        UserTaskDaoApi userTaskDaoApi = new UserTaskDaoImplementation(connectionManager);
+        UserTaskDaoApi userTaskDaoApi = null;
 
         projectServiceImplementation = new ProjectServiceImplementation(projectDaoApi,connectionManager,taskDaoApi,userTaskDaoApi);
     }

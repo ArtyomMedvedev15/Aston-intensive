@@ -8,7 +8,6 @@ import com.aston.dao.datasource.TransactionManagerImpl;
 import com.aston.dao.implementation.ProjectDaoImplementation;
 import com.aston.dao.implementation.TaskDaoImplementation;
 import com.aston.dao.implementation.UserDaoImplementation;
-import com.aston.dao.implementation.UserTaskDaoImplementation;
 import com.aston.util.*;
 import com.aston.util.dto.*;
 import org.hibernate.SessionFactory;
@@ -40,14 +39,13 @@ public class UserTaskServiceImplementationTest {
         UserDaoApi userDaoApi = new UserDaoImplementation(sessionFactory);
         ProjectDaoApi projectDaoApi = new ProjectDaoImplementation(sessionFactory);
         TaskDaoApi taskDaoApi = new TaskDaoImplementation(sessionFactory);
-        UserTaskDaoApi userTaskDaoApi = new UserTaskDaoImplementation(connectionManager);
-        taskServiceImplementation = new TaskServiceImplementation(taskDaoApi,
+         taskServiceImplementation = new TaskServiceImplementation(taskDaoApi,
                 new ProjectServiceImplementation(projectDaoApi,
-                        connectionManager,taskDaoApi,userTaskDaoApi),connectionManager);
-        userServiceImplementation = new UserServiceImplementation(userDaoApi,connectionManager);
-        userTaskServiceImplementation = new UserTaskServiceImplementation(userTaskDaoApi,userServiceImplementation,
+                        connectionManager,taskDaoApi,null),connectionManager);
+        userServiceImplementation = new UserServiceImplementation(userDaoApi,sessionFactory);
+        userTaskServiceImplementation = new UserTaskServiceImplementation(null,userServiceImplementation,
                 taskServiceImplementation,connectionManager);
-        projectServiceImplementation = new ProjectServiceImplementation(projectDaoApi,connectionManager,taskDaoApi,userTaskDaoApi);
+        projectServiceImplementation = new ProjectServiceImplementation(projectDaoApi,connectionManager,taskDaoApi,null);
 
     }
 

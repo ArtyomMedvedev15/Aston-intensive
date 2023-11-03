@@ -124,37 +124,25 @@ public class ProjectServiceImplementation implements ProjectServiceApi {
     @Override
     public List<ProjectDto> getProjectByName(String name) throws SQLException {
         List<ProjectDto> projectDtoList = new ArrayList<>();
-        try {
-            transactionManager.beginTransaction();
-            if(!name.equals("")) {
-                projectDtoList = projectDaoApi.getProjectByName(name).stream().map(ProjectDtoUtil::fromEntity)
-                        .collect(Collectors.toList());
-            }else{
-                projectDtoList = projectDaoApi.getAllProject().stream().map(ProjectDtoUtil::fromEntity)
-                        .collect(Collectors.toList());
-            }
-            transactionManager.commitTransaction();
-        } catch (SQLException e) {
-            transactionManager.rollbackTransaction();
-            log.error("Cannot get all project by name with exception {}",e.getMessage());
-            e.printStackTrace();
+        transactionManager.beginTransaction();
+        if(!name.equals("")) {
+            projectDtoList = projectDaoApi.getProjectByName(name).stream().map(ProjectDtoUtil::fromEntity)
+                    .collect(Collectors.toList());
+        }else{
+            projectDtoList = projectDaoApi.getAllProject().stream().map(ProjectDtoUtil::fromEntity)
+                    .collect(Collectors.toList());
         }
+        transactionManager.commitTransaction();
         return projectDtoList;
     }
 
     @Override
     public List<ProjectDto> getAllProject() throws SQLException {
         List<ProjectDto> projectDtoList;
-        try {
-            transactionManager.beginTransaction();
-            projectDtoList = projectDaoApi.getAllProject().stream().map(ProjectDtoUtil::fromEntity)
-                    .collect(Collectors.toList());
-            transactionManager.commitTransaction();
-        } catch (SQLException e) {
-            transactionManager.rollbackTransaction();
-            log.error("Cannot get all project with exception {}",e.getMessage());
-            throw e;
-        }
+        transactionManager.beginTransaction();
+        projectDtoList = projectDaoApi.getAllProject().stream().map(ProjectDtoUtil::fromEntity)
+                .collect(Collectors.toList());
+        transactionManager.commitTransaction();
         return projectDtoList;
     }
 
