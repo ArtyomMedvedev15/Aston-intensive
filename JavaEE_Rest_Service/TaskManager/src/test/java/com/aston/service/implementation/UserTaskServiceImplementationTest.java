@@ -37,7 +37,7 @@ public class UserTaskServiceImplementationTest {
         connectionPool.init("database");
         TransactionManager transactionManager = new TransactionManagerImpl(connectionPool);
         ConnectionManager connectionManager = new ConnectionManager(transactionManager);
-        UserDaoApi userDaoApi = new UserDaoImplementation(connectionManager, sessionFactory);
+        UserDaoApi userDaoApi = new UserDaoImplementation(sessionFactory);
         ProjectDaoApi projectDaoApi = new ProjectDaoImplementation(connectionManager);
         TaskDaoApi taskDaoApi = new TaskDaoImplementation(connectionManager);
         UserTaskDaoApi userTaskDaoApi = new UserTaskDaoImplementation(connectionManager);
@@ -80,11 +80,11 @@ public class UserTaskServiceImplementationTest {
                 .username("usertest")
                 .build();
 
-        int userId = userServiceImplementation.createUser(userSave);
+        Long userId = userServiceImplementation.createUser(userSave);
 
         UserTaskDto userTaskSave = UserTaskDto.builder()
                 .userId(userId)
-                .taskId(taskId)
+                .taskId((long) taskId)
                 .build();
 
         int userTaskSaveResult = userTaskServiceImplementation.createUserTask(userTaskSave);
@@ -117,10 +117,10 @@ public class UserTaskServiceImplementationTest {
                 .email("testsaveuser@mail.cas")
                 .username("usertest")
                 .build();
-        int userId = userServiceImplementation.createUser(userSave);
+        Long userId = userServiceImplementation.createUser(userSave);
         UserTaskDto userTaskSave = UserTaskDto.builder()
                 .userId(userId)
-                .taskId(taskId)
+                .taskId((long) taskId)
                 .build();
         userTaskServiceImplementation.createUserTask(userTaskSave);
         UserTaskAlreadyExistsException userTaskAlreadyExistsException = assertThrows(
@@ -159,16 +159,16 @@ public class UserTaskServiceImplementationTest {
                 .username("usertest")
                 .build();
 
-        int userId = userServiceImplementation.createUser(userSave);
+        Long userId = userServiceImplementation.createUser(userSave);
 
         UserTaskDto userTaskSave = UserTaskDto.builder()
                 .userId(userId)
-                .taskId(taskId)
+                .taskId((long) taskId)
                 .build();
 
         int userTaskId = userTaskServiceImplementation.createUserTask(userTaskSave);
 
-        List<UserTaskFullDto> allUserTaskByUserByUserId = userTaskServiceImplementation.getAllUserTaskByUser(userId);
+        List<UserTaskFullDto> allUserTaskByUserByUserId = userTaskServiceImplementation.getAllUserTaskByUser(Math.toIntExact(userId));
 
         Assert.assertTrue(allUserTaskByUserByUserId.size()>0);
 
@@ -202,11 +202,11 @@ public class UserTaskServiceImplementationTest {
                 .username("usertest")
                 .build();
 
-        int userId = userServiceImplementation.createUser(userSave);
+        Long userId = userServiceImplementation.createUser(userSave);
 
         UserTaskDto userTaskSave = UserTaskDto.builder()
                 .userId(userId)
-                .taskId(taskId)
+                .taskId((long) taskId)
                 .build();
 
         int userTaskId = userTaskServiceImplementation.createUserTask(userTaskSave);
@@ -245,11 +245,11 @@ public class UserTaskServiceImplementationTest {
                 .username("usertest")
                 .build();
 
-        int userId = userServiceImplementation.createUser(userSave);
+        Long userId = userServiceImplementation.createUser(userSave);
 
         UserTaskDto userTaskSave = UserTaskDto.builder()
                 .userId(userId)
-                .taskId(taskId)
+                .taskId((long) taskId)
                 .build();
 
         int userTaskId = userTaskServiceImplementation.createUserTask(userTaskSave);

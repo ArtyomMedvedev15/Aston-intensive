@@ -50,8 +50,8 @@ public class RestUserTaskSaveServlet extends HttpServlet {
         int taskId = jsonNode.get("taskId").asInt();
 
         UserTaskDto userTaskDto = UserTaskDto.builder()
-                .userId(userId)
-                .taskId(taskId)
+                .userId((long) userId)
+                .taskId((long) taskId)
                 .build();
 
         int userTaskId = 0;

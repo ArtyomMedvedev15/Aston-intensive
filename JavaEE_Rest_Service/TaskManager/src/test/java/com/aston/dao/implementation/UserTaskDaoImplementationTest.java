@@ -34,7 +34,7 @@ public class UserTaskDaoImplementationTest {
         TransactionManager transactionManager = new TransactionManagerImpl(connectionPool);
         ConnectionManager connectionManager = new ConnectionManager(transactionManager);
         taskDaoApi = new TaskDaoImplementation(connectionManager);
-        userDaoApi = new UserDaoImplementation(connectionManager, sessionFactory);
+        userDaoApi = new UserDaoImplementation(sessionFactory);
         projectDaoApi = new ProjectDaoImplementation(connectionManager);
         userTaskDaoImplementation = new UserTaskDaoImplementation(connectionManager);
     }
@@ -78,7 +78,7 @@ public class UserTaskDaoImplementationTest {
 
         taskDaoApi.deleteTask(taskId);
         projectDaoApi.deleteProject(projectId);
-        userDaoApi.deleteUser(Math.toIntExact(userId));
+        userDaoApi.deleteUser((long) Math.toIntExact(userId));
         userTaskDaoImplementation.deleteUserTask(userTaskSaveResult);
 
     }
@@ -118,7 +118,7 @@ public class UserTaskDaoImplementationTest {
 
         taskDaoApi.deleteTask(taskId);
         projectDaoApi.deleteProject(projectId);
-        userDaoApi.deleteUser(userId);
+        userDaoApi.deleteUser((long) userId);
         userTaskDaoImplementation.deleteUserTask(userTaskSaveResult);
     }
 
@@ -156,7 +156,7 @@ public class UserTaskDaoImplementationTest {
 
         taskDaoApi.deleteTask(taskId);
         projectDaoApi.deleteProject(projectId);
-        userDaoApi.deleteUser(userId);
+        userDaoApi.deleteUser((long) userId);
         userTaskDaoImplementation.deleteUserTask(userTaskSaveResult);
     }
 
@@ -195,6 +195,6 @@ public class UserTaskDaoImplementationTest {
 
         taskDaoApi.deleteTask(taskId);
         projectDaoApi.deleteProject(projectId);
-        userDaoApi.deleteUser(userId);
+        userDaoApi.deleteUser((long) userId);
     }
 }

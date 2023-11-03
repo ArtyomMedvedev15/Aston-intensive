@@ -46,7 +46,7 @@ public class UserTaskServiceImplementation implements UserTaskServiceApi {
         int userTaskId = 0;
         try {
             transactionManager.beginTransaction();
-            if(userServiceApi.getUserById(userTaskEntity.getUserId())==null){
+            if(userServiceApi.getUserById((long) userTaskEntity.getUserId())==null){
                 log.info("User with id {} not found in {}",userTaskEntity.getUserId(),new Date());
                 throw new UserNotFoundException(String.format("User with id %s was not found",userTaskEntity.getUserId()));
             }
@@ -95,7 +95,7 @@ public class UserTaskServiceImplementation implements UserTaskServiceApi {
             userTaskByUserList.forEach(o1->{
                 try {
                     o1.setTaskId(taskServiceApi.getTaskById(Math.toIntExact(o1.getTaskId().getId())));
-                    o1.setUserId(userServiceApi.getUserById(Math.toIntExact(o1.getUserId().getId())));
+                    o1.setUserId(userServiceApi.getUserById((long) Math.toIntExact(o1.getUserId().getId())));
                 } catch (SQLException | UserNotFoundException | TaskNotFoundException | ProjectNotFoundException e) {
                     e.printStackTrace();
                 }
@@ -123,8 +123,8 @@ public class UserTaskServiceImplementation implements UserTaskServiceApi {
 
     private UserTask fromDto(UserTaskDto userTaskDto) {
         UserTask userTask = UserTask.builder()
-                .userId(userTaskDto.getUserId())
-                .taskId(userTaskDto.getTaskId())
+                .userId(Math.toIntExact(userTaskDto.getUserId()))
+                .taskId(Math.toIntExact(userTaskDto.getTaskId()))
                 .build();
         return userTask;
     }
@@ -132,7 +132,7 @@ public class UserTaskServiceImplementation implements UserTaskServiceApi {
     private void setUserAndTaskByUserId(int userid, List<UserTaskFullDto> userTaskByUserList) {
         userTaskByUserList.forEach(o1->{
             try {
-                o1.setUserId(userServiceApi.getUserById(userid));
+                o1.setUserId(userServiceApi.getUserById((long) userid));
                 o1.setTaskId(taskServiceApi.getTaskById(Math.toIntExact(o1.getTaskId().getId())));
             } catch (SQLException | UserNotFoundException | TaskNotFoundException | ProjectNotFoundException e) {
                 e.printStackTrace();

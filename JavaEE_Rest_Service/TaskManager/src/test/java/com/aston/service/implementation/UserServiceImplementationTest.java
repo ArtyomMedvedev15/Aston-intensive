@@ -35,7 +35,7 @@ public class UserServiceImplementationTest {
         connectionPool.init("database");
         TransactionManager transactionManager = new TransactionManagerImpl(connectionPool);
         ConnectionManager connectionManager = new ConnectionManager(transactionManager);
-        UserDaoApi userDaoApi = new UserDaoImplementation(connectionManager, sessionFactory);
+        UserDaoApi userDaoApi = new UserDaoImplementation(sessionFactory);
         userServiceImplementation = new UserServiceImplementation(userDaoApi,connectionManager);
     }
 
@@ -49,7 +49,7 @@ public class UserServiceImplementationTest {
                 .email("testsaveuser@mail.cas")
                 .username("usertest")
                 .build();
-        int userSaveResult = userServiceImplementation.createUser(userSave);
+        Long userSaveResult = userServiceImplementation.createUser(userSave);
         Assert.assertTrue(userSaveResult>0);
         userServiceImplementation.deleteUser(userSaveResult);
     }
@@ -120,14 +120,14 @@ public class UserServiceImplementationTest {
                 .email("testsaveuser@mail.cas")
                 .username("usertest")
                 .build();
-        int userSaveResult = userServiceImplementation.createUser(userSave);
+        Long userSaveResult = userServiceImplementation.createUser(userSave);
 
         UserDto userUpdate = UserDto.builder()
                 .id((long) userSaveResult)
                 .email("testsaveuser@mail.cas")
                 .username("usertest")
                 .build();
-        int userUpdateResult = userServiceImplementation.updateUser(userUpdate);
+        Long userUpdateResult = userServiceImplementation.updateUser(userUpdate);
         Assert.assertTrue(userUpdateResult>0);
         userServiceImplementation.deleteUser(userSaveResult);
 
@@ -201,9 +201,9 @@ public class UserServiceImplementationTest {
                 .email("testsaveuser@mail.cas")
                 .username("usertest")
                 .build();
-        int userSaveResult = userServiceImplementation.createUser(userSave);
+        Long userSaveResult = userServiceImplementation.createUser(userSave);
 
-        int userDeleteResult = userServiceImplementation.deleteUser(userSaveResult);
+        Long userDeleteResult = userServiceImplementation.deleteUser(userSaveResult);
         assertTrue(userDeleteResult>0);
     }
 
@@ -211,19 +211,19 @@ public class UserServiceImplementationTest {
     public void DeleteUserTest_WithNonExistsUser_ReturnTrue(){
         UserNotFoundException userNotFoundException = assertThrows(
                UserNotFoundException.class,
-                () -> userServiceImplementation.deleteUser(929292));
+                () -> userServiceImplementation.deleteUser(929292L));
 
         Assert.assertEquals("User with id - 929292 not found", userNotFoundException.getMessage());
     }
 
     @Test
-    public void GetUserByIdTest_WithId778_ReturnTrue() throws UserNotFoundException, SQLException, UserInvalidParameterException {
+    public void GetUserByIdTest_WithId778_ReturnTrue() throws UserNotFoundException, UserInvalidParameterException {
         UserDto userSave = UserDto.builder()
                 .email("testsaveuser@mail.cas")
                 .username("usertest")
                 .build();
 
-        int userSaveResult = userServiceImplementation.createUser(userSave);
+        Long userSaveResult = userServiceImplementation.createUser(userSave);
 
         UserDto userById = userServiceImplementation.getUserById(userSaveResult);
         Assert.assertEquals("usertest", userById.getUsername());
@@ -234,7 +234,7 @@ public class UserServiceImplementationTest {
     public void GetUserByIdTest_WithNonExistsUser_ReturnTrue(){
         UserNotFoundException userNotFoundException = assertThrows(
                 UserNotFoundException.class,
-                () -> userServiceImplementation.getUserById(929292));
+                () -> userServiceImplementation.getUserById(929292L));
 
         Assert.assertEquals("User with id - 929292 not found", userNotFoundException.getMessage());
     }

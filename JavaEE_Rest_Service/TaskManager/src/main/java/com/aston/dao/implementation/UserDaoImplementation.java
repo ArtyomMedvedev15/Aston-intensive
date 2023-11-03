@@ -11,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
+import org.hibernate.query.Query;
 
 import java.sql.*;
 import java.util.ArrayList;
@@ -19,18 +20,9 @@ import java.util.List;
 
 @Slf4j
 public class UserDaoImplementation implements UserDaoApi {
-    private static final String INSERT_USER_QUERY = "INSERT INTO taskmaneger.users(username,email)VALUES(?,?)";
-    private static final String SELECT_USER_BY_ID_QUERY = "SELECT * FROM taskmaneger.users WHERE id=?";
-    private static final String SELECT_USER_BY_USERNAME_QUERY= "SELECT * FROM taskmaneger.users WHERE username=?";
-    private static final String UPDATE_USER_QUERY = "UPDATE taskmaneger.users SET email=?, username=? WHERE id=?";
-    private static final String SELECT_ALL_USERS_QUERY = "SELECT * FROM taskmaneger.users";
-    private static final String DELETE_USER_QUERY = "DELETE FROM taskmaneger.users WHERE id=?";
+    private final SessionFactory sessionFactory;
 
-     private final ConnectionManager connectionManager;
-     private final SessionFactory sessionFactory;
-
-    public UserDaoImplementation(ConnectionManager connectionManager, SessionFactory sessionFactory) {
-        this.connectionManager = connectionManager;
+    public UserDaoImplementation(SessionFactory sessionFactory) {
         this.sessionFactory = sessionFactory;
     }
 
@@ -54,82 +46,86 @@ public class UserDaoImplementation implements UserDaoApi {
         }
     }
     @Override
-    public int updateUser(User user) throws SQLException {
-
-        int rowsUpdated = 0;
-        try ( Connection connection = connectionManager.getConnection();
-                PreparedStatement pst = connection.prepareStatement(UPDATE_USER_QUERY)) {
-            pst.setString(2, user.getUsername());
-            pst.setString(1, user.getEmail());
-            pst.setLong(3, user.getId());
-            rowsUpdated = pst.executeUpdate();
-
-        } catch (SQLException ex) {
-            log.error(ex.getMessage(), ex);
-            throw ex;
+    public Long updateUser(User user){
+        long rowsUpdated = 0;
+        try (Session session = sessionFactory.openSession()) {
+            Transaction transaction = session.beginTransaction();
+            try {
+                session.merge(user);
+                transaction.commit();
+                rowsUpdated = 1;
+            } catch (Exception e) {
+                if (transaction != null) {
+                    transaction.rollback();
+                }
+                log.error("Error updating user", e);
+            }
         }
-        log.info("Update user with id {} in {}",rowsUpdated,new Date());
+
+        log.info("Update user with id {} in {}", user.getId(), new Date());
         return rowsUpdated;
     }
 
     @Override
-    public int deleteUser(int userId) throws SQLException {
+    public Long deleteUser(Long userId){
+        long rowsDeleted = 0;
+        try (Session session = sessionFactory.openSession()) {
+            Transaction transaction = session.beginTransaction();
 
-        int updated_rows;
-
-        try (Connection connection = connectionManager.getConnection();
-                PreparedStatement pst = connection.prepareStatement(DELETE_USER_QUERY)) {
-            pst.setLong(1, userId);
-            updated_rows = pst.executeUpdate();
-        } catch (SQLException ex) {
-            log.error(ex.getMessage(), ex);
-            throw ex;
-        }
-        log.info("Delete user with id {} in {}",userId,new Date());
-        return updated_rows;
-    }
-    @Override
-    public User getUserById(int userId) throws SQLException {
-
-        User dbUser = null;
-        try (Connection connection = connectionManager.getConnection();
-                PreparedStatement pst = connection.prepareStatement(SELECT_USER_BY_ID_QUERY)) {
-            pst.setInt(1, userId);
-            try (ResultSet rs = pst.executeQuery()) {
-                if (rs.next()) {
-                    dbUser = parseUserFromResultSet(rs);
+            try {
+                User user = session.get(User.class, userId);
+                if (user != null) {
+                    session.remove(user);
+                    transaction.commit();
+                    rowsDeleted = 1;
                 }
-            }
-        } catch (SQLException ex) {
-            log.error(ex.getMessage(), ex);
-            throw ex;
-        }
-        log.info("Get user by id with {} in {}",userId,new Date());
-        return dbUser;
-    }
-
-    @Override
-    public User getUserByUsername(String username) throws SQLException {
-
-        User dbUser = null;
-        try (Connection connection = connectionManager.getConnection();
-                PreparedStatement pst = connection.prepareStatement(SELECT_USER_BY_USERNAME_QUERY)) {
-            pst.setString(1, username);
-            try (ResultSet rs = pst.executeQuery()) {
-                if (rs.next()) {
-                    dbUser = parseUserFromResultSet(rs);
+            } catch (Exception e) {
+                if (transaction != null) {
+                    transaction.rollback();
                 }
+                log.error("Error deleting user", e);
             }
-        } catch (SQLException ex) {
-            log.error(ex.getMessage(), ex);
-            throw ex;
         }
-        log.info("Get user by username with {} in {}",username,new Date());
-        return dbUser;
+
+        log.info("Delete user with id {} in {}", userId, new Date());
+        return rowsDeleted;
+    }
+    @Override
+    public User getUserById(Long userId){
+        User user = null;
+        try (Session session = sessionFactory.openSession()) {
+            user = session.get(User.class, userId);
+        } catch (Exception e) {
+            log.error("Error getting user by ID", e);
+        }
+        log.info("Get user by id {} in {}", userId, new Date());
+        return user;
     }
 
     @Override
-    public List<User> getAllUsers() throws SQLException {
+    public User getUserByUsername(String username){
+        User user = null;
+        try (Session session = sessionFactory.openSession()) {
+            CriteriaBuilder builder = session.getCriteriaBuilder();
+            CriteriaQuery<User> query = builder.createQuery(User.class);
+            Root<User> root = query.from(User.class);
+
+            query.select(root).where(builder.equal(root.get("username"), username));
+            Query<User> q = session.createQuery(query);
+
+            List<User> userList = q.getResultList();
+            if (!userList.isEmpty()) {
+                user = userList.get(0);
+            }
+        } catch (Exception e) {
+            log.error("Error getting user by username", e);
+        }
+        log.info("Get user by username {} in {}", username, new Date());
+        return user;
+    }
+
+    @Override
+    public List<User> getAllUsers(){
         try (Session session = sessionFactory.openSession()) {
             CriteriaBuilder criteriaBuilder = session.getCriteriaBuilder();
             CriteriaQuery<User> query = criteriaBuilder.createQuery(User.class);
@@ -146,15 +142,5 @@ public class UserDaoImplementation implements UserDaoApi {
             ex.printStackTrace();
             throw ex;
         }
-    }
-
-
-
-    private User parseUserFromResultSet(ResultSet rs) throws SQLException {
-        User userMapper = new User();
-        userMapper.setId((long) Integer.parseInt(rs.getString("id")));
-        userMapper.setUsername(rs.getString("username"));
-        userMapper.setEmail(rs.getString("email"));
-        return userMapper;
     }
 }

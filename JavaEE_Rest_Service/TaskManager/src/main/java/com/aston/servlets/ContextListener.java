@@ -66,7 +66,7 @@ public class ContextListener implements ServletContextListener {
         configuration.configure("hibernate.cfg.xml");
         SessionFactory sessionFactory = configuration.buildSessionFactory();
 
-        this.userDaoApi = new UserDaoImplementation(connectionManager, sessionFactory);
+        this.userDaoApi = new UserDaoImplementation(sessionFactory);
         this.taskDaoApi = new TaskDaoImplementation(connectionManager);
         this.projectDaoApi = new ProjectDaoImplementation(connectionManager);
         this.userTaskDaoApi = new UserTaskDaoImplementation(connectionManager);

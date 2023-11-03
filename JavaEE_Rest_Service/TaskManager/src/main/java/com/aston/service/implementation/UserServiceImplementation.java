@@ -8,12 +8,16 @@ import com.aston.service.api.UserServiceApi;
 import com.aston.util.UserInvalidParameterException;
 import com.aston.util.UserNotFoundException;
 import com.aston.util.dto.UserDto;
+import com.aston.util.dto.UserDtoUtil;
 import lombok.extern.slf4j.Slf4j;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import static com.aston.util.dto.UserDtoUtil.fromEntity;
 
 @Slf4j
 public class UserServiceImplementation implements UserServiceApi {
@@ -28,16 +32,11 @@ public class UserServiceImplementation implements UserServiceApi {
     }
 
     @Override
-    public int createUser(UserDto userSaveDto) throws SQLException, UserInvalidParameterException {
+    public Long createUser(UserDto userSaveDto) throws UserInvalidParameterException {
         User userEntity;
         userEntity = ValidateUserDto(userSaveDto);
-        int userId = 0;
-        try {
-             userId = Math.toIntExact(userDaoApi.createUser(userEntity));
-         } catch (SQLException e) {
-            log.error("Cannot save user get exception {}", e.getMessage());
-            throw e;
-         }
+        long userId = userDaoApi.createUser(userEntity);
+        log.info("Save new user with id {} in {}",userId,new Date());
         return userId;
     }
 
@@ -45,7 +44,7 @@ public class UserServiceImplementation implements UserServiceApi {
         User userEntity;
         if((userSaveDto.getUsername().length()>5 && userSaveDto.getUsername().length()<256)
                 && userSaveDto.getEmail().length()>8 && userSaveDto.getEmail().length()<256){
-            userEntity = fromDto(userSaveDto);
+            userEntity = UserDtoUtil.fromDto(userSaveDto);
         }else{
             throw new UserInvalidParameterException("Username or email invalid, try yet");
         }
@@ -53,47 +52,36 @@ public class UserServiceImplementation implements UserServiceApi {
     }
 
     @Override
-    public int updateUser(UserDto userUpdate) throws SQLException, UserInvalidParameterException {
+    public Long updateUser(UserDto userUpdate) throws UserInvalidParameterException {
         User userEntity;
         userEntity = ValidateUserDto(userUpdate);
-        int userId = 0;
-        try {
-            userId = userDaoApi.updateUser(userEntity);
-        } catch (SQLException e) {
-            log.error("Cannot update user get exception {}", e.getMessage());
-            throw e;
-        }
+        long userId = userDaoApi.updateUser(userEntity);
+        log.info("Update user with id {} in {}",userId,new Date());
         return userId;
     }
 
     @Override
-    public int deleteUser(int userId) throws SQLException, UserNotFoundException {
-        try {
-            User userEntity = userDaoApi.getUserById(userId);
-            if(userEntity!=null){
-                userId = userDaoApi.deleteUser(userId);
-            }else{
-                throw new UserNotFoundException(String.format("User with id - %s not found",userId));
-            }
-        } catch (SQLException e) {
-            log.error("Cannot delete user get exception {}", e.getMessage());
-            throw e;
+    public Long deleteUser(Long userId) throws UserNotFoundException {
+        User userEntity = userDaoApi.getUserById(userId);
+        if(userEntity!=null){
+            userId = userDaoApi.deleteUser(userId);
+            log.info("Delete user with id {} in {}",userId,new Date());
+        }else{
+            log.error("Cannot delete user with id {} throw exception in {}",userId,new Date());
+            throw new UserNotFoundException(String.format("User with id - %s not found",userId));
         }
         return userId;
     }
     @Override
-    public UserDto getUserById(int userId) throws SQLException, UserNotFoundException {
+    public UserDto getUserById(Long userId) throws UserNotFoundException {
         UserDto userDto;
-        try {
-            User userEntity = userDaoApi.getUserById(userId);
-            if(userEntity!=null){
-                userDto = fromEntity(userEntity);
-            }else{
-                throw new UserNotFoundException(String.format("User with id - %s not found",userId));
-            }
-        } catch (SQLException e) {
-            log.error("Cannot get user by id with exception {}",e.getMessage());
-           throw e;
+        User userEntity = userDaoApi.getUserById(userId);
+        if(userEntity!=null){
+            log.info("Get user with id {} in {}",userId,new Date());
+            userDto = fromEntity(userEntity);
+        }else{
+            log.error("Cannot get user with id {} throw exception in {}",userId,new Date());
+            throw new UserNotFoundException(String.format("User with id - %s not found",userId));
         }
         return userDto;
     }
@@ -101,49 +89,27 @@ public class UserServiceImplementation implements UserServiceApi {
     @Override
     public UserDto getUserByUsername(String username) throws SQLException, UserNotFoundException {
         UserDto userDto;
-        try {
-            User userByUsername = userDaoApi.getUserByUsername(username);
-            if(userByUsername!=null) {
-                userDto = fromEntity(userByUsername);
-            }else{
-                throw new UserNotFoundException(String.format("User with username %s not found",username));
-            }
-        } catch (SQLException e) {
-            log.error("Cannot get user by username with exception {}",e.getMessage());
-            throw e;
+        User userByUsername = userDaoApi.getUserByUsername(username);
+        if(userByUsername!=null) {
+            userDto = fromEntity(userByUsername);
+            log.info("Get user with username {} in {}",username,new Date());
+        }else{
+            log.error("Cannot get user with username {} throw exception in {}",username,new Date());
+            throw new UserNotFoundException(String.format("User with username %s not found",username));
         }
         return userDto;
     }
 
     @Override
     public List<UserDto> getAllUsers(){
-        List<UserDto> userDtoList = new ArrayList<>();
-         try {
-             userDtoList = userDaoApi.getAllUsers().stream().map(this::fromEntity)
-                     .collect(Collectors.toList());
-        } catch (SQLException e) {
-            log.error("Cannot get all user with exception {}",e.getMessage());
-            e.printStackTrace();
-         }
+        List<UserDto> userDtoList;
+        userDtoList = userDaoApi.getAllUsers().stream().map(UserDtoUtil::fromEntity)
+                .collect(Collectors.toList());
+        log.info("Get user list in {}",new Date());
         return userDtoList;
     }
 
 
 
-    private User fromDto(UserDto dto) {
-        User userEntity = new User();
-                userEntity.setId(dto.getId());
-                userEntity.setUsername(dto.getUsername());
-                userEntity.setEmail(dto.getEmail());
-        return userEntity;
-    }
 
-    private UserDto fromEntity(User userEntity) {
-        UserDto userDto = UserDto.builder()
-                .id(userEntity.getId())
-                .username(userEntity.getUsername())
-                .email(userEntity.getEmail())
-                .build();
-        return userDto;
-    }
 }
