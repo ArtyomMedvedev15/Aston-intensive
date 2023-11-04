@@ -2,13 +2,21 @@ package com.aston.util.dto.util;
 
 import com.aston.entities.Project;
 import com.aston.util.dto.ProjectDto;
+import com.aston.util.dto.ProjectUpdateDto;
 
 public class ProjectDtoUtil {
     public static Project fromDto(ProjectDto projectDto) {
         Project projectEntity = new Project();
-        projectEntity.setId(projectDto.getId());
         projectEntity.setName(projectDto.getName());
         projectEntity.setDescription(projectDto.getDescription());
+        return projectEntity;
+    }
+
+    public static Project fromDto(ProjectUpdateDto projectUpdateDto) {
+        Project projectEntity = new Project();
+        projectEntity.setId(projectUpdateDto.getId());
+        projectEntity.setName(projectUpdateDto.getName());
+        projectEntity.setDescription(projectUpdateDto.getDescription());
         return projectEntity;
     }
 

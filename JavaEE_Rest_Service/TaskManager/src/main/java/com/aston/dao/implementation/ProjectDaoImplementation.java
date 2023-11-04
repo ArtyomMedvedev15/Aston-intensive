@@ -55,7 +55,7 @@ public class ProjectDaoImplementation implements ProjectDaoApi {
         try (Session session = sessionFactory.openSession()) {
             Transaction transaction = session.beginTransaction();
             try {
-                session.merge(project);
+                session.update(project);
                 transaction.commit();
                 rowsUpdated = 1;
                 log.info("Update project with id {} in {}",project.getId(),new Date());

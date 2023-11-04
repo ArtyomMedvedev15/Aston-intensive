@@ -3,6 +3,7 @@ package com.aston.servlets.project;
 import com.aston.service.api.ProjectServiceApi;
 import com.aston.util.ProjectInvalidParameterException;
 import com.aston.util.dto.ProjectDto;
+import com.aston.util.dto.ProjectUpdateDto;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
@@ -43,7 +44,7 @@ public class RestProjectUpdateServlet extends HttpServlet {
         String name = jsonNode.get("name").asText();
         String description = jsonNode.get("description").asText();
 
-        ProjectDto projectDtoUpdate = ProjectDto.builder()
+        ProjectUpdateDto projectDtoUpdate = ProjectUpdateDto.builder()
                 .id(id)
                 .name(name)
                 .description(description)

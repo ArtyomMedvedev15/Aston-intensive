@@ -39,10 +39,8 @@ public class TaskServiceImplementationTest {
         ProjectDaoApi projectDaoApi = new ProjectDaoImplementation(sessionFactory);
         TaskDaoApi taskDaoApi = new TaskDaoImplementation(sessionFactory);
         UserTaskDaoApi userTaskDaoApi = null;
-        taskServiceImplementation = new TaskServiceImplementation(taskDaoApi,
-                new ProjectServiceImplementation(projectDaoApi,
-                        connectionManager,taskDaoApi,userTaskDaoApi),connectionManager);
-        projectServiceImplementation = new ProjectServiceImplementation(projectDaoApi,connectionManager,taskDaoApi,userTaskDaoApi);
+        projectServiceImplementation = new ProjectServiceImplementation(projectDaoApi,null);
+        taskServiceImplementation = new TaskServiceImplementation(taskDaoApi,projectServiceImplementation,connectionManager);
 
     }
 
