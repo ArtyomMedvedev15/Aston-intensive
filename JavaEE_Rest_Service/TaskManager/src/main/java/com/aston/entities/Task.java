@@ -13,7 +13,6 @@ import java.util.HashSet;
 import java.util.Set;
 
 @Data
-@EqualsAndHashCode
 @ToString
 @Entity
 @Table(name = "task", schema = "taskmanager")
@@ -27,9 +26,10 @@ public class Task {
     private Date deadline;
     private String status;
 
-    @ManyToOne(cascade = CascadeType.MERGE)
-    @JoinColumn(name = "project_id")
+    @ManyToOne
+    @JoinColumn(name = "project_id",referencedColumnName = "id")
     private Project project;
+
     @ManyToMany(mappedBy = "userTask",cascade = CascadeType.ALL)
     private Set<User> taskUser = new HashSet<>();
 

@@ -2,12 +2,14 @@ package com.aston.service.implementation;
 
 
 import com.aston.dao.api.ProjectDaoApi;
+import com.aston.dao.api.TaskDaoApi;
 import com.aston.dao.implementation.ProjectDaoImplementation;
-import com.aston.entities.Project;
-import com.aston.util.ProjectInvalidParameterException;
+import com.aston.dao.implementation.TaskDaoImplementation;
 import com.aston.util.ProjectNotFoundException;
+import com.aston.util.TaskInvalidParameterException;
 import com.aston.util.dto.ProjectDto;
 import com.aston.util.dto.ProjectUpdateDto;
+import com.aston.util.dto.TaskDto;
 import org.flywaydb.core.Flyway;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
@@ -15,15 +17,19 @@ import org.hibernate.Transaction;
 import org.hibernate.cfg.Configuration;
 import org.junit.*;
 
-import java.sql.SQLException;
+import java.sql.Date;
 import java.util.List;
 
 
 public class ProjectServiceImplementationTest {
 
     private static ProjectServiceImplementation projectServiceImplementation;
+    private static TaskServiceImplementation taskServiceImplementation;
+
     private static SessionFactory sessionFactory;
     private static ProjectDaoApi projectDaoApi;
+    private static TaskDaoApi taskDaoApi;
+
 
     @BeforeClass
     public static void init() {
@@ -38,7 +44,10 @@ public class ProjectServiceImplementationTest {
         configuration.configure("hibernate-test.cfg.xml");
         sessionFactory = configuration.buildSessionFactory();
         projectDaoApi = new ProjectDaoImplementation(sessionFactory);
+        taskDaoApi = new TaskDaoImplementation(sessionFactory);
         projectServiceImplementation = new ProjectServiceImplementation(projectDaoApi,sessionFactory);
+        taskServiceImplementation = new TaskServiceImplementation(taskDaoApi,projectServiceImplementation,sessionFactory, projectDaoApi);
+
     }
 
     @After
@@ -143,5 +152,30 @@ public class ProjectServiceImplementationTest {
         List<ProjectDto> allProject = projectServiceImplementation.getAllProject();
 
         Assert.assertTrue(allProject.size()>0);
+    }
+
+    @Test
+
+    public void GetAllTasksByProjectTest_ReturnTrue() throws ProjectNotFoundException, TaskInvalidParameterException {
+        ProjectDto projectDtoSave = ProjectDto.builder()
+                .name("TestProject")
+                .description("TestProject")
+                .build();
+
+        Long projectSaveId = projectServiceImplementation.createProject(projectDtoSave);
+
+        ProjectDto projectId = projectServiceImplementation.getProjectById(projectSaveId);
+
+        TaskDto taskSave = TaskDto.builder()
+                .title("TestTest")
+                .description("TestTestTest")
+                .deadline(new Date(new java.util.Date().getTime()))
+                .status("Open")
+                .projectId(projectSaveId)
+                .project(projectId)
+                .build();
+
+        taskServiceImplementation.createTask(taskSave);
+
     }
 }

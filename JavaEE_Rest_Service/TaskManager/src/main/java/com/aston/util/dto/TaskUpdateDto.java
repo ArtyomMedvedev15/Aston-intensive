@@ -1,6 +1,5 @@
 package com.aston.util.dto;
 
-import com.aston.entities.Project;
 import lombok.Builder;
 import lombok.Data;
 
@@ -8,7 +7,7 @@ import java.sql.Date;
 
 @Data
 @Builder
-public class TaskDto {
+public class TaskUpdateDto {
     private Long id;
     private String title;
     private String description;

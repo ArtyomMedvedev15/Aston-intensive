@@ -15,6 +15,5 @@ public interface ProjectDaoApi {
     List<Project> getAllProject();
     Long updateProject(Project project);
     Long deleteProject(Long projectId);
-    Set<Task> getAllTasksByProject(Long projectId);
 
 }

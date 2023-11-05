@@ -86,7 +86,7 @@ public class TaskDaoImplementation implements TaskDaoApi {
         try (Session session = sessionFactory.openSession()) {
             Transaction transaction = session.beginTransaction();
             try {
-                session.merge(task);
+                session.update(task);
                 transaction.commit();
                 rowsUpdated = 1;
                 log.info("Update task with id {} in {}",task.getId(),new Date());

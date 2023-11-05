@@ -6,6 +6,8 @@ import com.aston.dao.datasource.ConnectionManager;
 import com.aston.entities.Project;
 import com.aston.entities.Task;
 import com.aston.entities.User;
+import com.aston.util.ProjectNotFoundException;
+import com.aston.util.TransactionException;
 import com.aston.util.dto.TaskDto;
 import jakarta.persistence.EntityGraph;
 import jakarta.persistence.TypedQuery;
@@ -13,7 +15,9 @@ import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
+import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
+import org.hibernate.Hibernate;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
@@ -89,30 +93,6 @@ public class ProjectDaoImplementation implements ProjectDaoApi {
             }
         }
         return rowsDeleted;
-    }
-
-    @Override
-    public Set<Task> getAllTasksByProject(Long projectId) {
-        try (Session session = sessionFactory.openSession()) {
-            EntityGraph<Project> graph = session.createEntityGraph(Project.class);
-            graph.addAttributeNodes("tasks");
-
-            Map<String, Object> hints = new HashMap<>();
-            hints.put("javax.persistence.fetchgraph", graph);
-
-            Project project = session.find(Project.class, projectId, hints);
-
-            if (project != null) {
-                log.info("Get project with id {} in {}", projectId, new Date());
-                return project.getTasks();
-            } else {
-                log.info("Project not found with id {}", projectId);
-                return new HashSet<>();
-            }
-        } catch (Exception e) {
-            log.error("Error getting tasks by project ID", e);
-            return new HashSet<>();
-        }
     }
 
     @Override

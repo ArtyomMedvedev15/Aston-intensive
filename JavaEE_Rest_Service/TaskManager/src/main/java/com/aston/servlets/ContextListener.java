@@ -70,7 +70,7 @@ public class ContextListener implements ServletContextListener {
         this.userServiceApi = new UserServiceImplementation(userDaoApi,sessionFactory);
         this.userTaskServiceApi = new UserTaskServiceImplementation(userTaskDaoApi,userServiceApi,taskServiceApi, connectionManager);
         this.projectServiceApi = new ProjectServiceImplementation(projectDaoApi, sessionFactory);
-        this.taskServiceApi = new TaskServiceImplementation(taskDaoApi,projectServiceApi,connectionManager);
+        this.taskServiceApi = new TaskServiceImplementation(taskDaoApi,projectServiceApi,sessionFactory, projectDaoApi);
 
 
         servletContext.setAttribute("userService",userServiceApi);

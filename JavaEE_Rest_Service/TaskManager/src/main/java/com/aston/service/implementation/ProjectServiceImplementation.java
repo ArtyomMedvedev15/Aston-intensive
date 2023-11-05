@@ -11,6 +11,7 @@ import com.aston.util.dto.ProjectUpdateDto;
 import com.aston.util.dto.TaskDto;
 import com.aston.util.dto.util.ProjectDtoUtil;
 import com.aston.util.dto.util.TaskDtoUtil;
+import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
@@ -21,8 +22,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static com.aston.util.dto.util.ProjectDtoUtil.fromDto;
-import static com.aston.util.dto.util.ProjectDtoUtil.fromEntity;
+import static com.aston.util.dto.util.ProjectDtoUtil.*;
 
 @Slf4j
 public class ProjectServiceImplementation implements ProjectServiceApi {
@@ -106,31 +106,6 @@ public class ProjectServiceImplementation implements ProjectServiceApi {
     }
 
     @Override
-    public Set<TaskDto> getAllTasksByProject(Long projectId) throws ProjectNotFoundException {
-        Project projectByID = projectDaoApi.getProjectById(projectId);
-        Set<TaskDto>taskDtosByProject;
-        if(projectByID!=null) {
-            try (Session session = sessionFactory.openSession()) {
-                Transaction transaction = session.beginTransaction();
-                try {
-                    taskDtosByProject = projectDaoApi.getAllTasksByProject(projectId).stream().
-                            map(TaskDtoUtil::fromEntity).collect(Collectors.toSet());
-                    transaction.commit();
-                    log.info("Get all task by project with id {} in {}", projectByID, new Date());
-                    return taskDtosByProject;
-                }catch (Exception exception) {
-                    transaction.rollback();
-                    log.error("Cannot commit transaction, error with db");
-                    throw new TransactionException(String.format("Error with with database with message %s", exception.getMessage()));
-                }
-            }
-        }else{
-            log.error("Cannot get all task by project id in {}",new Date());
-            throw new ProjectNotFoundException(String.format("Project with id %s was not found",projectId));
-        }
-    }
-
-    @Override
     public ProjectDto getProjectById(Long projectId){
         ProjectDto projectDto;
         try (Session session = sessionFactory.openSession()) {
@@ -138,7 +113,7 @@ public class ProjectServiceImplementation implements ProjectServiceApi {
             try {
                 Project projectByID = projectDaoApi.getProjectById(projectId);
                 if (projectByID != null) {
-                    projectDto = fromEntity(projectByID);
+                    projectDto = fromEntityWithTask(projectByID);
                     transaction.commit();
                 } else {
                     throw new ProjectNotFoundException(String.format("Project with id %s was not found", projectId));

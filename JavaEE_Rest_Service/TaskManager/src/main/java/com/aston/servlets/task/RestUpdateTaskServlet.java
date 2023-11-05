@@ -2,6 +2,7 @@ package com.aston.servlets.task;
 
 import com.aston.service.api.TaskServiceApi;
 import com.aston.service.implementation.TaskServiceImplementation;
+import com.aston.util.ProjectNotFoundException;
 import com.aston.util.TaskInvalidParameterException;
 import com.aston.util.dto.TaskDto;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -30,7 +31,7 @@ public class RestUpdateTaskServlet extends HttpServlet {
     }
 
     @Override
-    protected void doPut(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+    protected void doPut(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         BufferedReader reader = req.getReader();
         StringBuilder jsonPayload = new StringBuilder();
         String line;
@@ -46,7 +47,7 @@ public class RestUpdateTaskServlet extends HttpServlet {
         String description = jsonNode.get("description").asText();
         String deadline = jsonNode.get("deadline").asText();
         String status = jsonNode.get("status").asText();
-        int projectId = jsonNode.get("projectid").asInt();
+        Long projectId = jsonNode.get("projectid").asLong();
 
         TaskDto taskDtoSave = TaskDto.builder()
                 .id(id)

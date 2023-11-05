@@ -19,7 +19,4 @@ public interface ProjectServiceApi {
     List<ProjectDto> getAllProject() throws SQLException;
     Long updateProject(ProjectUpdateDto projectDtoUpdate) throws SQLException, ProjectInvalidParameterException;
     Long deleteProject(Long projectId) throws SQLException, ProjectNotFoundException;
-    Set<TaskDto> getAllTasksByProject(Long projectId) throws ProjectNotFoundException;
-
-
 }

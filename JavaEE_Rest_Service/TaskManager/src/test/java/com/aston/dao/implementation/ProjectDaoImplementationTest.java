@@ -124,9 +124,4 @@ public class ProjectDaoImplementationTest {
         Assert.assertTrue(allProject.size()>0);
     }
 
-    @Test
-    public void GetAllTasksByProjectTest_WithProjectId777_ReturnTrue(){
-        Set<Task> allTasksByProject = projectDaoImplementation.getAllTasksByProject(777L);
-        Assert.assertTrue(allTasksByProject.size()>0);
-    }
 }

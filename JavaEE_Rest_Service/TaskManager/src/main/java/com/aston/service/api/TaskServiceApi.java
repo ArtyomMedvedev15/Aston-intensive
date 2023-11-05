@@ -10,10 +10,11 @@ import java.util.List;
 import java.util.Set;
 
 public interface TaskServiceApi {
-    Long createTask(TaskDto taskDtoSave) throws SQLException, TaskInvalidParameterException;
+    Long createTask(TaskDto taskDtoSave) throws SQLException, TaskInvalidParameterException, ProjectNotFoundException;
     TaskDto getTaskById(Long taskId) throws SQLException, TaskNotFoundException, ProjectNotFoundException;
     List<TaskDto> getAllTasks() throws SQLException;
-    Set<TaskDto> getAllTasksByProject(Long projectId) throws SQLException, ProjectNotFoundException;
     Long updateTask(TaskDto taskDtoUpdate) throws SQLException, TaskInvalidParameterException;
     Long deleteTask(Long taskId) throws SQLException, TaskNotFoundException;
+    Set<TaskDto> getAllTasksByProject(Long projectId) throws ProjectNotFoundException;
+
 }
