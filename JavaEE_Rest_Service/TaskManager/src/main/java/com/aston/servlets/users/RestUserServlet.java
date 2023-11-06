@@ -69,7 +69,7 @@ public class RestUserServlet extends HttpServlet {
                 .username(username)
                 .email(email)
                 .build();
-        int userId = 0;
+        Long userId;
 
         try {
             userId = userService.createUser(userDtoSave);
@@ -109,7 +109,7 @@ public class RestUserServlet extends HttpServlet {
                 .email(email)
                 .build();
          try {
-            int userId = userService.updateUser(userDtoUpdate);
+            Long userId = userService.updateUser(userDtoUpdate);
             resp.setStatus(HttpServletResponse.SC_OK);
             PrintWriter out = resp.getWriter();
             out.println(String.format("Update user with id %s in %s", userDtoUpdate.getId(), new Date()));
@@ -128,7 +128,7 @@ public class RestUserServlet extends HttpServlet {
     protected void doDelete(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         String deleteUserId = req.getParameter("idDelete");
         try {
-            int userId = userService.deleteUser(Integer.parseInt(deleteUserId));
+            Long userId = userService.deleteUser(Long.valueOf(deleteUserId));
             resp.setStatus(HttpServletResponse.SC_NO_CONTENT);
             PrintWriter out = resp.getWriter();
             out.println(String.format("Delete user with id %s in %s", deleteUserId, new Date()));

@@ -1,113 +1,133 @@
 package com.aston.service.implementation;
 
 
-import com.aston.dao.api.*;
-import com.aston.dao.datasource.ConnectionManager;
-import com.aston.dao.datasource.ConnectionPoolImpl;
-import com.aston.dao.datasource.TransactionManagerImpl;
+import com.aston.dao.api.ProjectDaoApi;
+import com.aston.dao.api.TaskDaoApi;
 import com.aston.dao.implementation.ProjectDaoImplementation;
 import com.aston.dao.implementation.TaskDaoImplementation;
-import com.aston.dao.implementation.UserTaskDaoImplementation;
-import com.aston.util.ConnectionPoolException;
-import com.aston.util.ProjectInvalidParameterException;
 import com.aston.util.ProjectNotFoundException;
+import com.aston.util.TaskInvalidParameterException;
 import com.aston.util.dto.ProjectDto;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import com.aston.util.dto.ProjectUpdateDto;
+import com.aston.util.dto.TaskDto;
+import org.flywaydb.core.Flyway;
+import org.hibernate.Session;
+import org.hibernate.SessionFactory;
+import org.hibernate.Transaction;
+import org.hibernate.cfg.Configuration;
+import org.junit.*;
 
-import java.sql.SQLException;
+import java.sql.Date;
 import java.util.List;
 
 
 public class ProjectServiceImplementationTest {
 
     private static ProjectServiceImplementation projectServiceImplementation;
-    private static ConnectionPool connectionPool;
-    @BeforeClass
-    public static void init() throws ConnectionPoolException {
-        connectionPool = ConnectionPoolImpl.getInstance();
-        connectionPool.init("database");
-        TransactionManager transactionManager = new TransactionManagerImpl(connectionPool);
-        ConnectionManager connectionManager = new ConnectionManager(transactionManager);
-        ProjectDaoApi projectDaoApi = new ProjectDaoImplementation(connectionManager);
-        TaskDaoApi taskDaoApi = new TaskDaoImplementation(connectionManager);
-        UserTaskDaoApi userTaskDaoApi = new UserTaskDaoImplementation(connectionManager);
+    private static TaskServiceImplementation taskServiceImplementation;
 
-        projectServiceImplementation = new ProjectServiceImplementation(projectDaoApi,connectionManager,taskDaoApi,userTaskDaoApi);
+    private static SessionFactory sessionFactory;
+    private static ProjectDaoApi projectDaoApi;
+    private static TaskDaoApi taskDaoApi;
+
+
+    @BeforeClass
+    public static void init() {
+        Flyway flyway = Flyway.configure()
+                .dataSource("jdbc:postgresql://localhost:5432/taskmanagertest",
+                        "postgres", "postgres")
+                .schemas("taskmanager")
+                .locations("classpath:db/migration")
+                .load();
+        flyway.migrate();
+        Configuration configuration = new Configuration();
+        configuration.configure("hibernate-test.cfg.xml");
+        sessionFactory = configuration.buildSessionFactory();
+        projectDaoApi = new ProjectDaoImplementation(sessionFactory);
+        taskDaoApi = new TaskDaoImplementation(sessionFactory);
+        projectServiceImplementation = new ProjectServiceImplementation(projectDaoApi,sessionFactory);
+        taskServiceImplementation = new TaskServiceImplementation(taskDaoApi,projectServiceImplementation,sessionFactory, projectDaoApi);
+
+    }
+
+    @After
+    public void cleanup() {
+        Session session = sessionFactory.openSession();
+        Transaction tx = session.beginTransaction();
+        session.createQuery("DELETE FROM Project ").executeUpdate();
+        tx.commit();
+        session.close();
     }
 
     @AfterClass
-    public static void destroy() throws ConnectionPoolException {
-        connectionPool.destroy();
+    public static void closeSession() {
+        if (sessionFactory != null) {
+            sessionFactory.close();
+        }
     }
 
     @Test
-    public void CreateProjectTest_WithValidProject_ReturnTrue() throws SQLException, ProjectInvalidParameterException, ProjectNotFoundException {
+    public void CreateProjectTest_WithValidProject_ReturnTrue(){
         ProjectDto projectDtoSave = ProjectDto.builder()
                 .name("TestProject")
                 .description("TestProject")
                 .build();
 
-        int projectSaveResult = projectServiceImplementation.createProject(projectDtoSave);
+        Long projectSaveResult = projectServiceImplementation.createProject(projectDtoSave);
 
         Assert.assertTrue(projectSaveResult>0);
 
-        projectServiceImplementation.deleteProject(projectSaveResult);
-    }
+     }
 
     @Test
-    public void UpdateProjectTest_WithValid_ReturnTrue() throws SQLException, ProjectInvalidParameterException, ProjectNotFoundException {
+    public void UpdateProjectTest_WithValid_ReturnTrue(){
         ProjectDto projectDtoSave = ProjectDto.builder()
                 .name("TestProject")
                 .description("TestProject")
                 .build();
 
-        int projectSaveId = projectServiceImplementation.createProject(projectDtoSave);
+        Long projectSaveResult = projectServiceImplementation.createProject(projectDtoSave);
 
-        ProjectDto projectDtoUpdate = ProjectDto.builder()
-                .id(projectSaveId)
-                .name("Update")
+        ProjectUpdateDto projectUpdateDto = ProjectUpdateDto.builder()
+                .id(projectSaveResult)
+                .name("Updated")
                 .description("TestProject")
                 .build();
 
-        int projectUpdateResult = projectServiceImplementation.updateProject(projectDtoUpdate);
+        Long projectUpdateResult = projectServiceImplementation.updateProject(projectUpdateDto);
 
         Assert.assertTrue(projectUpdateResult>0);
 
-        projectServiceImplementation.deleteProject(projectUpdateResult);
-    }
+     }
 
     @Test
-    public void DeleteProjectTest_WithExistsProject_ReturnTrue() throws SQLException, ProjectInvalidParameterException, ProjectNotFoundException {
+    public void DeleteProjectTest_WithExistsProject_ReturnTrue() throws ProjectNotFoundException {
         ProjectDto projectDtoSave = ProjectDto.builder()
                 .name("TestProject")
                 .description("TestProject")
                 .build();
 
-        int projectSaveId = projectServiceImplementation.createProject(projectDtoSave);
-        int projectDeleteResult = projectServiceImplementation.deleteProject(projectSaveId);
-        Assert.assertFalse(projectDeleteResult>0);
+        Long projectSaveId = projectServiceImplementation.createProject(projectDtoSave);
+        Long projectDeleteResult = projectServiceImplementation.deleteProject(projectSaveId);
+        Assert.assertTrue(projectDeleteResult>0);
     }
 
     @Test
-    public void GetProjectByIdTest_WithExistsProject_ReturnTrue() throws SQLException, ProjectInvalidParameterException, ProjectNotFoundException {
+    public void GetProjectByIdTest_WithExistsProject_ReturnTrue(){
         ProjectDto projectDtoSave = ProjectDto.builder()
                 .name("TestProject")
                 .description("TestProject")
                 .build();
 
-        int projectSaveId = projectServiceImplementation.createProject(projectDtoSave);
+        Long projectSaveId = projectServiceImplementation.createProject(projectDtoSave);
 
         ProjectDto projectById = projectServiceImplementation.getProjectById(projectSaveId);
 
         Assert.assertEquals("TestProject", projectById.getName());
-        projectServiceImplementation.deleteProject(projectSaveId);
-    }
+     }
 
     @Test
-    public void GetProjectByNameTest_WithValidName_ReturnTrue() throws SQLException, ProjectInvalidParameterException {
+    public void GetProjectByNameTest_WithValidName_ReturnTrue() {
         ProjectDto projectDtoSave = ProjectDto.builder()
                 .name("TestFind")
                 .description("TestProject")
@@ -121,7 +141,7 @@ public class ProjectServiceImplementationTest {
     }
 
     @Test
-    public void GetAllProjectTest_ReturnTrue() throws SQLException, ProjectInvalidParameterException {
+    public void GetAllProjectTest_ReturnTrue(){
         ProjectDto projectDtoSave = ProjectDto.builder()
                 .name("TestFind")
                 .description("TestProject")
@@ -132,5 +152,30 @@ public class ProjectServiceImplementationTest {
         List<ProjectDto> allProject = projectServiceImplementation.getAllProject();
 
         Assert.assertTrue(allProject.size()>0);
+    }
+
+    @Test
+
+    public void GetAllTasksByProjectTest_ReturnTrue() throws ProjectNotFoundException, TaskInvalidParameterException {
+        ProjectDto projectDtoSave = ProjectDto.builder()
+                .name("TestProject")
+                .description("TestProject")
+                .build();
+
+        Long projectSaveId = projectServiceImplementation.createProject(projectDtoSave);
+
+        ProjectDto projectId = projectServiceImplementation.getProjectById(projectSaveId);
+
+        TaskDto taskSave = TaskDto.builder()
+                .title("TestTest")
+                .description("TestTestTest")
+                .deadline(new Date(new java.util.Date().getTime()))
+                .status("Open")
+                .projectId(projectSaveId)
+                .project(projectId)
+                .build();
+
+        taskServiceImplementation.createTask(taskSave);
+
     }
 }

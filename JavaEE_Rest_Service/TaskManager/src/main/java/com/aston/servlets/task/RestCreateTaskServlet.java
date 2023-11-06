@@ -2,6 +2,7 @@ package com.aston.servlets.task;
 
 import com.aston.service.api.TaskServiceApi;
 import com.aston.service.implementation.TaskServiceImplementation;
+import com.aston.util.ProjectNotFoundException;
 import com.aston.util.TaskInvalidParameterException;
 import com.aston.util.dto.TaskDto;
 import com.aston.util.dto.UserDto;
@@ -30,7 +31,7 @@ public class RestCreateTaskServlet extends HttpServlet {
         this.taskServiceApi = (TaskServiceImplementation) taskService;
     }
     @Override
-    protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+    protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         BufferedReader reader = req.getReader();
         StringBuilder jsonPayload = new StringBuilder();
         String line;
@@ -45,7 +46,7 @@ public class RestCreateTaskServlet extends HttpServlet {
         String description = jsonNode.get("description").asText();
         String deadline = jsonNode.get("deadline").asText();
         String status = jsonNode.get("status").asText();
-        int projectId = jsonNode.get("projectid").asInt();
+        Long projectId = jsonNode.get("projectid").asLong();
 
         TaskDto taskDtoSave = TaskDto.builder()
                 .title(title)
@@ -54,7 +55,7 @@ public class RestCreateTaskServlet extends HttpServlet {
                 .status(status)
                 .projectId(projectId)
                 .build();
-        int taskId = 0;
+        Long taskId;
         try {
             taskId = taskServiceApi.createTask(taskDtoSave);
             resp.setStatus(HttpServletResponse.SC_OK);
@@ -68,6 +69,10 @@ public class RestCreateTaskServlet extends HttpServlet {
             resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
             PrintWriter out = resp.getWriter();
             out.println(String.format("Cannot save new task get error %s in %s", e.getMessage(), new Date()));
+        } catch (ProjectNotFoundException e) {
+            resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
+            PrintWriter out = resp.getWriter();
+            out.println(String.format("Cannot get by id project get error %s in %s", e.getMessage(), new Date()));
         }
     }
 }

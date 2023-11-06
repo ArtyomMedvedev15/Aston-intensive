@@ -1,28 +1,43 @@
-create schema if not exists taskmaneger;
+create schema if not exists taskmanager;
 
-create table if not exists taskmaneger.users
+create table if not exists taskmanager.users
 (
-    id serial primary key,
-    username varchar(256) not null,
-    email varchar(256) not null
-    );
-create table if not exists taskmaneger.project(
-                                                  id serial primary key,
-                                                  name varchar(256) not null,
-    description varchar(512) not null
-    );
-create table if not exists taskmaneger.task
+    id       bigint not null
+        primary key,
+    email    varchar(255),
+    username varchar(255)
+);
+
+create table if not exists taskmanager.project
 (
-    id serial primary key,
-    title varchar(256) not null,
-    description varchar(256) not null,
-    deadline date not null,
-    status varchar(128) not null,
-    projectId int references taskmaneger.project(id)
-    );
-create table if not exists taskmaneger.usertask
+    id          bigint not null
+        primary key,
+    description varchar(255),
+    name        varchar(255)
+);
+
+create table if not exists taskmanager.task
 (
-    id serial primary key,
-    userid int references taskmaneger.users(id) on delete cascade,
-    taskid int references taskmaneger.task(id) on delete cascade
-    );
+    id          bigint not null
+        primary key,
+    deadline    date,
+    description varchar(255),
+    status      varchar(255),
+    title       varchar(255),
+    project_id  bigint
+        constraint fkk8qrwowg31kx7hp93sru1pdqa
+            references taskmanager.project on delete cascade
+);
+
+
+create table taskmanager.usertask
+(
+    id      bigint not null
+        primary key,
+    task_id bigint
+        constraint fk1kqdxo98ldhtsk8yepccmqjck
+            references taskmanager.task on delete cascade,
+    user_id bigint
+        constraint fk4id53d8cqlg1330d2cxf9vnh4
+            references taskmanager.users on delete cascade
+);

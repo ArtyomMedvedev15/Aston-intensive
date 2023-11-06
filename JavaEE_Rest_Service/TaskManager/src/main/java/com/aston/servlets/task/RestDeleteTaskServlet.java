@@ -29,7 +29,7 @@ public class RestDeleteTaskServlet extends HttpServlet {
     protected void doDelete(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         String idDelete = req.getParameter("idDelete");
         try {
-            taskServiceApi.deleteTask(Integer.parseInt(idDelete));
+            taskServiceApi.deleteTask(Long.valueOf(idDelete));
             resp.setContentType("application/json");
             resp.setStatus(HttpServletResponse.SC_NO_CONTENT);
             log.info("Delete task by id with id {}",idDelete);

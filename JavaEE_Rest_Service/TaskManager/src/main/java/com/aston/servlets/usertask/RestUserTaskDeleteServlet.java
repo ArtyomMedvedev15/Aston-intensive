@@ -1,6 +1,8 @@
 package com.aston.servlets.usertask;
 
 import com.aston.service.api.UserTaskServiceApi;
+import com.aston.util.TaskNotFoundException;
+import com.aston.util.UserNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.servlet.ServletException;
@@ -27,16 +29,22 @@ public class RestUserTaskDeleteServlet extends HttpServlet {
 
     @Override
     protected void doDelete(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        String idDelete = req.getParameter("idDelete");
+        String idUser = req.getParameter("idUser");
+        String idTask = req.getParameter("idTask");
+
         try {
-            userTaskServiceApi.deleteUserTask(Integer.parseInt(idDelete));
+            userTaskServiceApi.deleteUserTask(Long.valueOf(idUser),Long.valueOf(idTask));
             resp.setContentType("application/json");
             resp.setStatus(HttpServletResponse.SC_NO_CONTENT);
-            log.info("Delete user task by id with id {}",idDelete);
+            log.info("Delete user task by id with id {}",Long.valueOf(idUser));
         } catch (SQLException e) {
             resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
             PrintWriter out = resp.getWriter();
             out.println(String.format("Cannot delete by id user task get error %s in %s", e.getMessage(), new Date()));
+        } catch (UserNotFoundException e) {
+            throw new RuntimeException(e);
+        } catch (TaskNotFoundException e) {
+            throw new RuntimeException(e);
         }
     }
 }

@@ -1,56 +1,60 @@
 package com.aston.service.implementation;
 
 import com.aston.dao.api.ProjectDaoApi;
-import com.aston.dao.api.TaskDaoApi;
-import com.aston.dao.api.TransactionManager;
-import com.aston.dao.api.UserTaskDaoApi;
-import com.aston.dao.datasource.ConnectionManager;
 import com.aston.entities.Project;
-import com.aston.entities.Task;
 import com.aston.service.api.ProjectServiceApi;
 import com.aston.util.ProjectInvalidParameterException;
 import com.aston.util.ProjectNotFoundException;
-import com.aston.util.TaskNotFoundException;
+import com.aston.util.TransactionException;
 import com.aston.util.dto.ProjectDto;
+import com.aston.util.dto.ProjectUpdateDto;
+import com.aston.util.dto.TaskDto;
+import com.aston.util.dto.util.ProjectDtoUtil;
+import com.aston.util.dto.util.TaskDtoUtil;
+import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
+import org.hibernate.Session;
+import org.hibernate.SessionFactory;
+import org.hibernate.Transaction;
 
-import java.sql.SQLException;
-import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
+
+import static com.aston.util.dto.util.ProjectDtoUtil.*;
 
 @Slf4j
 public class ProjectServiceImplementation implements ProjectServiceApi {
-
+    private final SessionFactory sessionFactory;
     private final ProjectDaoApi projectDaoApi;
-    private TransactionManager transactionManager;
-    private ConnectionManager connectionManager;
 
-    private final TaskDaoApi taskDaoApi;
-    private final UserTaskDaoApi userTaskDaoApi;
-    public ProjectServiceImplementation(ProjectDaoApi projectDaoApi, ConnectionManager connectionManager, TaskDaoApi taskDaoApi, UserTaskDaoApi userTaskDaoApi) {
-        this.connectionManager = connectionManager;
-        this.transactionManager = connectionManager.getTransactionManager();
+    public ProjectServiceImplementation(ProjectDaoApi projectDaoApi, SessionFactory sessionFactory) {
         this.projectDaoApi = projectDaoApi;
-        this.taskDaoApi = taskDaoApi;
-        this.userTaskDaoApi = userTaskDaoApi;
+        this.sessionFactory = sessionFactory;
     }
 
     @Override
-    public int createProject(ProjectDto projectDtoSave) throws SQLException, ProjectInvalidParameterException {
+    public Long createProject(ProjectDto projectDtoSave){
         Project projectEntity = fromDto(projectDtoSave);
-        int projectId = 0;
-        try {
-            projectId = validationDto(projectEntity);
-        } catch (SQLException e) {
-            log.error("Cannot save project get exception {}", e.getMessage());
-            throw e;
+        Long projectId;
+        try (Session session = sessionFactory.openSession()) {
+            Transaction transaction = session.beginTransaction();
+            try {
+                projectId = validationDto(projectEntity);
+                transaction.commit();
+                log.info("Save new project with id {} in {}", projectId, new Date());
+            }catch (Exception exception) {
+                transaction.rollback();
+                log.error("Cannot commit transaction, error with db");
+                throw new TransactionException(String.format("Error with with database with message %s", exception.getMessage()));
+            }
         }
         return projectId;
     }
 
-    private int validationDto(Project projectEntity) throws SQLException, ProjectInvalidParameterException {
-        int projectId;
+    private Long validationDto(Project projectEntity) throws ProjectInvalidParameterException {
+        Long projectId;
         if((projectEntity.getName().length()>4 && projectEntity.getName().length()<256)
                 &&(projectEntity.getDescription().length()>10&& projectEntity.getDescription().length()<512)) {
             projectId = projectDaoApi.createProject(projectEntity);
@@ -61,108 +65,112 @@ public class ProjectServiceImplementation implements ProjectServiceApi {
     }
 
     @Override
-    public int updateProject(ProjectDto projectDtoSave) throws SQLException, ProjectInvalidParameterException {
+    public Long updateProject(ProjectUpdateDto projectDtoSave){
         Project projectEntity = fromDto(projectDtoSave);
-        int projectId = 0;
-        try {
-            transactionManager.beginTransaction();
-            projectId = validationDto(projectEntity);
-            transactionManager.commitTransaction();
-        } catch (SQLException e) {
-            transactionManager.rollbackTransaction();
-            log.error("Cannot update project get exception {}", e.getMessage());
-            throw e;
+        Long projectId;
+        try (Session session = sessionFactory.openSession()) {
+            Transaction transaction = session.beginTransaction();
+            try {
+                projectId = projectDaoApi.updateProject(projectEntity);
+                transaction.commit();
+                log.info("Update project with id {} in {}",projectId,new Date());
+             }catch (Exception exception) {
+                transaction.rollback();
+                log.error("Cannot commit transaction, error with db");
+                throw new TransactionException(String.format("Error with with database with message %s", exception.getMessage()));
+            }
         }
         return projectId;
     }
 
     @Override
-    public int deleteProject(int projectId) throws SQLException, ProjectNotFoundException {
-        try {
-            Project projectByID = projectDaoApi.getProjectById(projectId);
-            if(projectByID!=null) {
-                projectId = projectDaoApi.deleteProject(projectId);
-            }else{
-                throw new ProjectNotFoundException(String.format("Project with id %s was not found",projectId));
+    public Long deleteProject(Long projectId) throws ProjectNotFoundException {
+        Project projectByID = projectDaoApi.getProjectById(projectId);
+        if(projectByID!=null) {
+            try (Session session = sessionFactory.openSession()) {
+                Transaction transaction = session.beginTransaction();
+                try {
+                    projectId = projectDaoApi.deleteProject(projectId);
+                    transaction.commit();
+                    log.info("Delete project with id {} in {}",projectId,new Date());
+                }catch (Exception exception) {
+                    transaction.rollback();
+                    log.error("Cannot commit transaction, error with db");
+                    throw new TransactionException(String.format("Error with with database with message %s", exception.getMessage()));
+                }
             }
-            projectId = projectDaoApi.deleteProject(projectId);
-         } catch (SQLException e) {
-             log.error("Cannot delete project get exception {}", e.getMessage());
-            throw e;
+        }else{
+            throw new ProjectNotFoundException(String.format("Project with id %s was not found",projectId));
         }
         return projectId;
     }
+
     @Override
-    public ProjectDto getProjectById(int projectId) throws SQLException, ProjectNotFoundException {
+    public ProjectDto getProjectById(Long projectId){
         ProjectDto projectDto;
-        try {
-            Project projectByID = projectDaoApi.getProjectById(projectId);
-            if(projectByID!=null) {
-                projectDto = fromEntity(projectByID);
-            }else{
-                throw new ProjectNotFoundException(String.format("Project with id %s was not found",projectId));
+        try (Session session = sessionFactory.openSession()) {
+            Transaction transaction = session.beginTransaction();
+            try {
+                Project projectByID = projectDaoApi.getProjectById(projectId);
+                if (projectByID != null) {
+                    projectDto = fromEntityWithTask(projectByID);
+                    transaction.commit();
+                } else {
+                    throw new ProjectNotFoundException(String.format("Project with id %s was not found", projectId));
+                }
+            }catch (Exception exception) {
+                transaction.rollback();
+                log.error("Cannot commit transaction, error with db");
+                throw new TransactionException(String.format("Error with with database with message %s", exception.getMessage()));
             }
-        } catch (SQLException e) {
-            log.error("Cannot get project by id with exception {}",e.getMessage());
-            throw e;
         }
         return projectDto;
     }
 
     @Override
-    public List<ProjectDto> getProjectByName(String name) throws SQLException {
-        List<ProjectDto> projectDtoList = new ArrayList<>();
-        try {
-            transactionManager.beginTransaction();
-            if(!name.equals("")) {
-                projectDtoList = projectDaoApi.getProjectByName(name).stream().map(this::fromEntity)
-                        .collect(Collectors.toList());
-            }else{
-                projectDtoList = projectDaoApi.getAllProject().stream().map(this::fromEntity)
-                        .collect(Collectors.toList());
-            }
-            transactionManager.commitTransaction();
-        } catch (SQLException e) {
-            transactionManager.rollbackTransaction();
-            log.error("Cannot get all project by name with exception {}",e.getMessage());
-            e.printStackTrace();
-        }
-        return projectDtoList;
-    }
-
-    @Override
-    public List<ProjectDto> getAllProject() throws SQLException {
+    public List<ProjectDto> getProjectByName(String name){
         List<ProjectDto> projectDtoList;
-        try {
-            transactionManager.beginTransaction();
-            projectDtoList = projectDaoApi.getAllProject().stream().map(this::fromEntity)
-                    .collect(Collectors.toList());
-            transactionManager.commitTransaction();
-        } catch (SQLException e) {
-            transactionManager.rollbackTransaction();
-            log.error("Cannot get all project with exception {}",e.getMessage());
-            throw e;
+        try (Session session = sessionFactory.openSession()) {
+            Transaction transaction = session.beginTransaction();
+            try {
+                if (!name.equals("")) {
+                    transaction.commit();
+                    projectDtoList = projectDaoApi.getProjectByName(name).stream().map(ProjectDtoUtil::fromEntity)
+                            .collect(Collectors.toList());
+                    log.info("Get project by name {} in {}",name,new Date());
+                } else {
+                    transaction.commit();
+                    projectDtoList = projectDaoApi.getAllProject().stream().map(ProjectDtoUtil::fromEntity)
+                            .collect(Collectors.toList());
+                    log.info("Get all project, name equals empty string in {}",new Date());
+                }
+            }catch (Exception exception) {
+                transaction.rollback();
+                log.error("Cannot commit transaction, error with db");
+                throw new TransactionException(String.format("Error with with database with message %s", exception.getMessage()));
+            }
         }
-        return projectDtoList;
+         return projectDtoList;
+    }
+
+    @Override
+    public List<ProjectDto> getAllProject(){
+        List<ProjectDto> projectDtoList;
+        try (Session session = sessionFactory.openSession()) {
+            Transaction transaction = session.beginTransaction();
+            try {
+                projectDtoList = projectDaoApi.getAllProject().stream().map(ProjectDtoUtil::fromEntity)
+                        .collect(Collectors.toList());
+                transaction.commit();
+                log.info("Get all project in {}",new Date());
+            }catch (Exception exception) {
+                transaction.rollback();
+                log.error("Cannot commit transaction, error with db");
+                throw new TransactionException(String.format("Error with with database with message %s", exception.getMessage()));
+            }
+        }
+         return projectDtoList;
     }
 
 
-
-    private Project fromDto(ProjectDto projectDto) {
-        Project projectEntity = Project.builder()
-                .id(projectDto.getId())
-                .name(projectDto.getName())
-                .description(projectDto.getDescription())
-                .build();
-        return projectEntity;
-    }
-
-    private ProjectDto fromEntity(Project projectEntity) {
-        ProjectDto projectDto = ProjectDto.builder()
-                .id(projectEntity.getId())
-                .name(projectEntity.getName())
-                .description(projectEntity.getDescription())
-                .build();
-        return projectDto;
-    }
 }

@@ -5,14 +5,13 @@ import com.aston.util.TaskNotFoundException;
 import com.aston.util.UserNotFoundException;
 import com.aston.util.UserTaskAlreadyExistsException;
 import com.aston.util.dto.UserTaskDto;
-import com.aston.util.dto.UserTaskFullDto;
+import com.aston.util.dto.UserTaskSaveDto;
 
 import java.sql.SQLException;
 import java.util.List;
 
 public interface UserTaskServiceApi {
-    int createUserTask(UserTaskDto userTaskDtoSave) throws SQLException, UserNotFoundException, ProjectNotFoundException, TaskNotFoundException, UserTaskAlreadyExistsException;
-    List<UserTaskFullDto> getAllUserTaskByUser(int userid) throws SQLException;
-    List<UserTaskFullDto>getAllUsersTask() throws SQLException;
-    int deleteUserTask(int id) throws SQLException;
+    int createUserTask(UserTaskSaveDto userTaskDtoSave) throws SQLException, UserNotFoundException, ProjectNotFoundException, TaskNotFoundException, UserTaskAlreadyExistsException;
+    UserTaskDto getAllUserTaskByUser(Long userid) throws SQLException, UserNotFoundException;
+    Long deleteUserTask(Long userId,Long taskDeleteId) throws SQLException, UserNotFoundException, TaskNotFoundException;
 }

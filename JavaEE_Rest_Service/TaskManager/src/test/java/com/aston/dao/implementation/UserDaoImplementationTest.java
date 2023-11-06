@@ -1,116 +1,119 @@
 package com.aston.dao.implementation;
 
 
-import com.aston.dao.api.ConnectionPool;
-import com.aston.dao.api.TransactionManager;
-import com.aston.dao.datasource.ConnectionManager;
-import com.aston.dao.datasource.ConnectionPoolImpl;
-import com.aston.dao.datasource.TransactionManagerImpl;
 import com.aston.entities.User;
-import com.aston.util.ConnectionPoolException;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.flywaydb.core.Flyway;
+import org.hibernate.HibernateException;
+import org.hibernate.Session;
+import org.hibernate.SessionFactory;
+import org.hibernate.Transaction;
+import org.hibernate.cfg.Configuration;
+import org.hibernate.query.Query;
+import org.junit.*;
 
-import java.sql.SQLException;
 import java.util.List;
 
 public class UserDaoImplementationTest {
     private static UserDaoImplementation userDaoImplementation;
-    private static ConnectionPool connectionPool;
+    private static SessionFactory sessionFactory;
     @BeforeClass
-    public static void init() throws ConnectionPoolException {
-        connectionPool = ConnectionPoolImpl.getInstance();
-        connectionPool.init("database");
-        TransactionManager transactionManager = new TransactionManagerImpl(connectionPool);
-        ConnectionManager connectionManager = new ConnectionManager(transactionManager);
-        userDaoImplementation = new UserDaoImplementation(connectionManager);
-    }
+    public static void init() {
+        Flyway flyway = Flyway.configure()
+                .dataSource("jdbc:postgresql://localhost:5432/taskmanagertest",
+                        "postgres", "postgres")
+                .schemas("taskmanager")
+                .locations("classpath:db/migration")
+                .load();
+        flyway.migrate();
+        Configuration configuration = new Configuration();
+        configuration.configure("hibernate-test.cfg.xml");
+        sessionFactory = configuration.buildSessionFactory();
+        userDaoImplementation = new UserDaoImplementation(sessionFactory);
+     }
 
+    @After
+    public void cleanup() {
+        Session session = sessionFactory.openSession();
+        Transaction tx = session.beginTransaction();
+        session.createQuery("DELETE FROM User").executeUpdate();
+        tx.commit();
+        session.close();
+    }
     @AfterClass
-    public static void destroy() throws ConnectionPoolException {
-        connectionPool.destroy();
+    public static void closeSession() {
+        if (sessionFactory != null) {
+            sessionFactory.close();
+        }
     }
 
     @Test
-    public void CreateNewUserTest_ReturnTrue() throws SQLException {
-        User userSave = User.builder()
-                .email("testsaveuser@mail.cas")
-                .username("usertest")
-                .build();
+    public void CreateNewUserTest_ReturnTrue(){
+        User userSave = new User();
+                userSave.setEmail("testsaveuser@mail.cas");
+                userSave.setUsername("usertest");
 
-        int userSaveResult = userDaoImplementation.createUser(userSave);
+        Long userSaveResult = userDaoImplementation.createUser(userSave);
 
         Assert.assertTrue(userSaveResult>0);
-
-        userDaoImplementation.deleteUser(userSaveResult);
     }
 
     @Test
-    public void UpdateUserTest_ReturnTrue() throws SQLException {
-        User userSave = User.builder()
-                .email("testsaveuser@mail.cas")
-                .username("usertest")
-                .build();
+    public void UpdateUserTest_ReturnTrue(){
+        User userSave = new User();
+        userSave.setEmail("testsaveuser@mail.cas");
+        userSave.setUsername("usertest");
 
-        int userSaveResult = userDaoImplementation.createUser(userSave);
+        Long userSaveResult = userDaoImplementation.createUser(userSave);
 
-        User userUpdate = User.builder()
-                .id((long) userSaveResult)
-                .username("Updated")
-                .email("Updated")
-                .build();
-        int userUpdateResult = userDaoImplementation.updateUser(userUpdate);
+        User userUpdate = new User();
+        userUpdate.setId(userSaveResult);
+        userUpdate.setEmail("Updated@mail.cas");
+        userUpdate.setUsername("Updated");
+        Long userUpdateResult = userDaoImplementation.updateUser(userUpdate);
         Assert.assertTrue(userUpdateResult>0);
-        userDaoImplementation.deleteUser(userSaveResult);
-
     }
 
     @Test
-    public void DeleteUserTest_ReturnTrue() throws SQLException {
-        User userSave = User.builder()
-                .email("testsaveuser@mail.cas")
-                .username("usertest")
-                .build();
+    public void DeleteUserTest_ReturnTrue(){
+        User userSave = new User();
+        userSave.setEmail("testsaveuser@mail.cas");
+        userSave.setUsername("usertest");
 
-        int userForDelete = userDaoImplementation.createUser(userSave);
-        int userDeleteResult = userDaoImplementation.deleteUser(userForDelete);
+        Long userForDelete = userDaoImplementation.createUser(userSave);
+        Long userDeleteResult = userDaoImplementation.deleteUser(userForDelete);
 
         Assert.assertTrue(userDeleteResult>0);
     }
     @Test
-     public void GetUserByIDTest_WithId778_ReturnTrue() throws SQLException {
-        User userSave = User.builder()
-                .email("testsaveuser@mail.cas")
-                .username("usertest")
-                .build();
+     public void GetUserByIDTest_WithId778_ReturnTrue(){
+        User userSave = new User();
+        userSave.setEmail("testsaveuser@mail.cas");
+        userSave.setUsername("usertest");
 
-        int userSaveResult = userDaoImplementation.createUser(userSave);
+        Long userSaveResult = userDaoImplementation.createUser(userSave);
 
         User userById = userDaoImplementation.getUserById(userSaveResult);
         Assert.assertEquals("usertest", userById.getUsername());
-        userDaoImplementation.deleteUser(userSaveResult);
-
     }
 
     @Test
-    public void GetUserByUsernameTest_ReturnTrue() throws SQLException {
-        User userSave = User.builder()
-                .email("testsaveuser@mail.cas")
-                .username("usertest")
-                .build();
-
-        int userSaveResult = userDaoImplementation.createUser(userSave);
+    public void GetUserByUsernameTest_ReturnTrue() {
+        User userSave = new User();
+        userSave.setEmail("testsaveuser@mail.cas");
+        userSave.setUsername("usertest");
+        Long userSaveResult = userDaoImplementation.createUser(userSave);
 
         User userByUsername = userDaoImplementation.getUserByUsername("usertest");
         Assert.assertEquals("usertest", userByUsername.getUsername());
-        userDaoImplementation.deleteUser(userSaveResult);
-
     }
     @Test
-    public void GetAllUsersTest_ReturnTrue() throws SQLException {
+    public void GetAllUsersTest_ReturnTrue(){
+        User userSave = new User();
+        userSave.setEmail("testsaveuser@mail.cas");
+        userSave.setUsername("usertest");
+        userDaoImplementation.createUser(userSave);
         List<User> allUsersTest = userDaoImplementation.getAllUsers();
         Assert.assertTrue(allUsersTest.size()>0);
     }
+
 }

@@ -31,7 +31,7 @@ public class RestGetUserByIdServlet extends HttpServlet {
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         String userId = req.getParameter("idUser");
         try {
-            UserDto userById = userService.getUserById(Integer.parseInt(userId));
+            UserDto userById = userService.getUserById((long) Integer.parseInt(userId));
 
             ObjectMapper objectMapper = new ObjectMapper();
             String userByIdJson = objectMapper.writeValueAsString(userById);

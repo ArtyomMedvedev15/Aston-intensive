@@ -2,158 +2,124 @@ package com.aston.dao.implementation;
 
 import com.aston.dao.api.TaskDaoApi;
 import com.aston.dao.datasource.ConnectionManager;
+import com.aston.entities.Project;
 import com.aston.entities.Task;
+import jakarta.persistence.EntityGraph;
+import jakarta.persistence.TypedQuery;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Root;
 import lombok.extern.slf4j.Slf4j;
+import org.hibernate.Session;
+import org.hibernate.SessionFactory;
+import org.hibernate.Transaction;
 
 import java.sql.*;
-import java.util.ArrayList;
+import java.util.*;
 import java.util.Date;
-import java.util.List;
 
 @Slf4j
 public class TaskDaoImplementation implements TaskDaoApi {
+     private final SessionFactory sessionFactory;
 
-    private static final String INSERT_TASK_QUERY = "INSERT INTO taskmaneger.task(title,description,deadline,status,projectId) VALUES(?,?,?,?,?)";
-    private static final String SELECT_TASK_BY_ID_QUERY = "SELECT * FROM taskmaneger.task WHERE id = ?";
-    private static final String SELECT_TASK_BY_PROJECT_ID_QUERY = "SELECT * FROM taskmaneger.task WHERE projectId=?";
-    private static final String SELECT_ALL_TASK_QUERY = "SELECT * FROM taskmaneger.task";
-    private static final String UPDATE_TASK_QUERY = "UPDATE taskmaneger.task SET title=?,description=?,deadline=?,status=?,projectId=? WHERE id=?";
-    private static final String DELETE_TASK_QUERY = "DELETE FROM taskmaneger.task WHERE id=?";
-
-    private final ConnectionManager connectionManager;
-    public TaskDaoImplementation(ConnectionManager connectionManager) {
-        this.connectionManager = connectionManager;
+    public TaskDaoImplementation( SessionFactory sessionFactory) {
+         this.sessionFactory = sessionFactory;
     }
 
 
     @Override
-    public int createTask(Task task) throws SQLException {
-
-        try (Connection connection = connectionManager.getConnection();
-                PreparedStatement pst = connection.prepareStatement(INSERT_TASK_QUERY, Statement.RETURN_GENERATED_KEYS)) {
-            pst.setString(1, task.getTitle());
-            pst.setString(2, task.getDescription());
-            pst.setDate(3, task.getDeadline());
-            pst.setString(4, task.getStatus());
-            pst.setLong(5, task.getProjectId());
-
-            pst.executeUpdate();
-            try (ResultSet rs = pst.getGeneratedKeys()) {
-                rs.next();
-                int id = rs.getInt(1);
-                log.info("Create new task with id {} in {}",id,new Date());
-                return id;
+    public Long createTask(Task task){
+        try (Session session = sessionFactory.openSession()) {
+            Transaction transaction = session.beginTransaction();
+            try {
+                session.persist(task);
+                session.flush();
+                transaction.commit();
+                log.info("Save new task with id {} in {}", task.getId(), new Date());
+                return task.getId();
+            } catch (Exception ex) {
+                transaction.rollback();
+                log.error("Error while saving task: " + ex.getMessage(), ex);
+                ex.printStackTrace();
+                return (long) -1;
             }
-        } catch (SQLException ex) {
+        }
+    }
+
+    @Override
+    public Task getTaskById(Long taskId){
+        Task task = null;
+        try (Session session = sessionFactory.openSession()) {
+            task = session.get(Task.class, taskId);
+            log.info("Get task with id {} in {}",taskId,new Date());
+        } catch (Exception e) {
+            log.error("Error getting task by ID", e);
+        }
+        log.info("Get task by id {} in {}", taskId, new Date());
+        return task;
+    }
+
+    @Override
+    public List<Task> getAllTasks(){
+        try (Session session = sessionFactory.openSession()) {
+            CriteriaBuilder criteriaBuilder = session.getCriteriaBuilder();
+            CriteriaQuery<Task> query = criteriaBuilder.createQuery(Task.class);
+            Root<Task> root = query.from(Task.class);
+            query.select(root);
+
+            TypedQuery<Task> typedQuery = session.createQuery(query);
+            List<Task> taskList = typedQuery.getResultList();
+
+            log.info("Get all task list in {}", new Date());
+            return taskList;
+        } catch (Exception ex) {
             log.error(ex.getMessage(), ex);
+            ex.printStackTrace();
             throw ex;
         }
     }
 
-    @Override
-    public Task getTaskById(int taskId) throws SQLException {
-        Task dbTask = null;
 
-        try (Connection connection = connectionManager.getConnection();
-                PreparedStatement pst = connection.prepareStatement(SELECT_TASK_BY_ID_QUERY)) {
-            pst.setInt(1, taskId);
-            try (ResultSet rs = pst.executeQuery()) {
-                if (rs.next()) {
-                    dbTask = parseTaskFromResultSet(rs);
-                }
+    @Override
+    public Long updateTask(Task task){
+        long rowsUpdated = 0;
+        try (Session session = sessionFactory.openSession()) {
+            Transaction transaction = session.beginTransaction();
+            try {
+                session.update(task);
+                transaction.commit();
+                rowsUpdated = 1;
+                log.info("Update task with id {} in {}",task.getId(),new Date());
+            } catch (Exception e) {
+                transaction.rollback();
+                e.printStackTrace();
+                log.error("Error updating task", e);
             }
-        } catch (SQLException ex) {
-            log.error(ex.getMessage(), ex);
-            throw ex;
         }
-        log.info("Get task by id with id {} in {}",taskId,new Date());
-        return dbTask;
-    }
-
-    @Override
-    public List<Task> getAllTasks() throws SQLException {
-        List<Task> allTaskList = new ArrayList<>();
-
-        try ( Connection connection = connectionManager.getConnection();
-                PreparedStatement pst = connection.prepareStatement(SELECT_ALL_TASK_QUERY)) {
-            try (ResultSet rs = pst.executeQuery()) {
-                while (rs.next()) {
-                    allTaskList.add(parseTaskFromResultSet(rs));
-                }
-            }
-        } catch (SQLException ex) {
-            log.error(ex.getMessage(), ex);
-             throw ex;
-        }
-        log.info("Get all task in {}",new Date());
-        return allTaskList;
-    }
-
-    @Override
-    public List<Task> getAllTasksByProject(int projectId) throws SQLException {
-
-        List<Task> allTaskList = new ArrayList<>();
-        try ( Connection connection = connectionManager.getConnection();
-                PreparedStatement pst = connection.prepareStatement(SELECT_TASK_BY_PROJECT_ID_QUERY)) {
-            pst.setInt(1, projectId);
-            try (ResultSet rs = pst.executeQuery()) {
-                while (rs.next()) {
-                    allTaskList.add(parseTaskFromResultSet(rs));
-                }
-            }
-        } catch (SQLException ex) {
-            log.error(ex.getMessage(), ex);
-            throw ex;
-        }
-        log.info("Get all task by project with id {} in {}",projectId,new Date());
-        return allTaskList;
-    }
-
-    @Override
-    public int updateTask(Task task) throws SQLException {
-
-        int rowsUpdated = 0;
-         try ( Connection connection = connectionManager.getConnection();
-                 PreparedStatement pst = connection.prepareStatement(UPDATE_TASK_QUERY)) {
-            pst.setString(1, task.getTitle());
-            pst.setString(2, task.getDescription());
-            pst.setDate(3, task.getDeadline());
-            pst.setString(4, task.getStatus());
-            pst.setLong(5, task.getProjectId());
-            pst.setLong(6,task.getId());
-            rowsUpdated = pst.executeUpdate();
-        } catch (SQLException ex) {
-            log.error(ex.getMessage(), ex);
-            throw ex;
-        }
-         log.info("Update task with id {} in {}",rowsUpdated,new Date());
+        log.info("Update task with id {} in {}", task.getId(), new Date());
         return rowsUpdated;
     }
 
     @Override
-    public int deleteTask(int taskId) throws SQLException {
-
-        int updated_rows;
-         try ( Connection connection = connectionManager.getConnection();
-                 PreparedStatement pst = connection.prepareStatement(DELETE_TASK_QUERY)) {
-            pst.setLong(1, taskId);
-            updated_rows = pst.executeUpdate();
-        } catch (SQLException ex) {
-            log.error(ex.getMessage(), ex);
-            throw ex;
+    public Long deleteTask(Long taskId){
+        long rowsDeleted = 0;
+        try (Session session = sessionFactory.openSession()) {
+            Transaction transaction = session.beginTransaction();
+            try {
+                Task taskDelete = session.get(Task.class, taskId);
+                if (taskDelete != null) {
+                    session.remove(taskDelete);
+                    transaction.commit();
+                    rowsDeleted = 1;
+                    log.info("Delete task with id {} in {}",taskDelete.getId(),new Date());
+                }
+            } catch (Exception e) {
+                transaction.rollback();
+                e.printStackTrace();
+                log.error("Error deleting user", e);
+            }
         }
-         log.info("Delete task with id {} in {}",taskId,new Date());
-        return updated_rows;
+        return rowsDeleted;
     }
 
-    private Task parseTaskFromResultSet(ResultSet rs) throws SQLException {
-        Task taskMapper = Task.builder().build();
-        taskMapper.setId((long) Integer.parseInt(rs.getString("id")));
-        taskMapper.setTitle(rs.getString("title"));
-        taskMapper.setDescription(rs.getString("description"));
-        taskMapper.setDeadline(rs.getDate("deadline"));
-        taskMapper.setStatus(rs.getString("status"));
-        taskMapper.setProjectId(rs.getInt("projectId"));
-        return taskMapper;
-    }
 }

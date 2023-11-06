@@ -1,151 +1,142 @@
 package com.aston.dao.implementation;
 
 import com.aston.dao.api.UserDaoApi;
-import com.aston.dao.datasource.ConnectionManager;
 import com.aston.entities.User;
+import jakarta.persistence.TypedQuery;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Root;
 import lombok.extern.slf4j.Slf4j;
+import org.hibernate.Session;
+import org.hibernate.SessionFactory;
+import org.hibernate.Transaction;
+import org.hibernate.query.Query;
 
-import java.sql.*;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
 @Slf4j
 public class UserDaoImplementation implements UserDaoApi {
-    private static final String INSERT_USER_QUERY = "INSERT INTO taskmaneger.users(username,email)VALUES(?,?)";
-    private static final String SELECT_USER_BY_ID_QUERY = "SELECT * FROM taskmaneger.users WHERE id=?";
-    private static final String SELECT_USER_BY_USERNAME_QUERY= "SELECT * FROM taskmaneger.users WHERE username=?";
-    private static final String UPDATE_USER_QUERY = "UPDATE taskmaneger.users SET email=?, username=? WHERE id=?";
-    private static final String SELECT_ALL_USERS_QUERY = "SELECT * FROM taskmaneger.users";
-    private static final String DELETE_USER_QUERY = "DELETE FROM taskmaneger.users WHERE id=?";
-
-     private final ConnectionManager connectionManager;
-
-    public UserDaoImplementation(ConnectionManager connectionManager) {
-        this.connectionManager = connectionManager;
+    private final SessionFactory sessionFactory;
+    public UserDaoImplementation(SessionFactory sessionFactory) {
+        this.sessionFactory = sessionFactory;
     }
-
-
     @Override
-    public int createUser(User user) throws SQLException {
-
-        try (Connection connection = connectionManager.getConnection();
-                PreparedStatement pst = connection.prepareStatement(INSERT_USER_QUERY, Statement.RETURN_GENERATED_KEYS)) {
-            pst.setString(1, user.getUsername());
-            pst.setString(2, user.getEmail());
-            pst.executeUpdate();
-            try (ResultSet rs = pst.getGeneratedKeys()) {
-                rs.next();
-                int id = rs.getInt(1);
-                log.info("Save new user with id {} in {}",id,new Date());
-                return id;
+    public Long createUser(User user) {
+        try (Session session = sessionFactory.openSession()) {
+            Transaction transaction = session.beginTransaction();
+            try {
+                session.persist(user);
+                session.flush();
+                transaction.commit();
+                log.info("Save new user with id {} in {}", user.getId(), new Date());
+                return user.getId();
+            } catch (Exception ex) {
+                transaction.rollback();
+                log.error("Error while saving user: " + ex.getMessage(), ex);
+                ex.printStackTrace();
+                return (long) -1;
             }
-        } catch (SQLException ex) {
-            log.error(ex.getMessage(), ex);
-            throw ex;
         }
     }
     @Override
-    public int updateUser(User user) throws SQLException {
-
-        int rowsUpdated = 0;
-        try ( Connection connection = connectionManager.getConnection();
-                PreparedStatement pst = connection.prepareStatement(UPDATE_USER_QUERY)) {
-            pst.setString(2, user.getUsername());
-            pst.setString(1, user.getEmail());
-            pst.setLong(3, user.getId());
-            rowsUpdated = pst.executeUpdate();
-
-        } catch (SQLException ex) {
-            log.error(ex.getMessage(), ex);
-            throw ex;
+    public Long updateUser(User user){
+        long rowsUpdated = 0;
+        try (Session session = sessionFactory.openSession()) {
+            Transaction transaction = session.beginTransaction();
+            try {
+                session.merge(user);
+                transaction.commit();
+                rowsUpdated = 1;
+            } catch (Exception e) {
+                if (transaction != null) {
+                    transaction.rollback();
+                }
+                log.error("Error updating user", e);
+            }
         }
-        log.info("Update user with id {} in {}",rowsUpdated,new Date());
+
+        log.info("Update user with id {} in {}", user.getId(), new Date());
         return rowsUpdated;
     }
 
     @Override
-    public int deleteUser(int userId) throws SQLException {
+    public Long deleteUser(Long userId){
+        long rowsDeleted = 0;
+        try (Session session = sessionFactory.openSession()) {
+            Transaction transaction = session.beginTransaction();
 
-        int updated_rows;
-
-        try (Connection connection = connectionManager.getConnection();
-                PreparedStatement pst = connection.prepareStatement(DELETE_USER_QUERY)) {
-            pst.setLong(1, userId);
-            updated_rows = pst.executeUpdate();
-        } catch (SQLException ex) {
-            log.error(ex.getMessage(), ex);
-            throw ex;
+            try {
+                User user = session.get(User.class, userId);
+                if (user != null) {
+                    session.remove(user);
+                    transaction.commit();
+                    rowsDeleted = 1;
+                }
+            } catch (Exception e) {
+                if (transaction != null) {
+                    transaction.rollback();
+                }
+                log.error("Error deleting user", e);
+            }
         }
-        log.info("Delete user with id {} in {}",userId,new Date());
-        return updated_rows;
+
+        log.info("Delete user with id {} in {}", userId, new Date());
+        return rowsDeleted;
     }
     @Override
-    public User getUserById(int userId) throws SQLException {
-
-        User dbUser = null;
-        try (Connection connection = connectionManager.getConnection();
-                PreparedStatement pst = connection.prepareStatement(SELECT_USER_BY_ID_QUERY)) {
-            pst.setInt(1, userId);
-            try (ResultSet rs = pst.executeQuery()) {
-                if (rs.next()) {
-                    dbUser = parseUserFromResultSet(rs);
-                }
-            }
-        } catch (SQLException ex) {
-            log.error(ex.getMessage(), ex);
-            throw ex;
+    public User getUserById(Long userId){
+        User user = null;
+        try (Session session = sessionFactory.openSession()) {
+            user = session.get(User.class, userId);
+        } catch (Exception e) {
+            log.error("Error getting user by ID", e);
         }
-        log.info("Get user by id with {} in {}",userId,new Date());
-        return dbUser;
-    }
-
-    @Override
-    public User getUserByUsername(String username) throws SQLException {
-
-        User dbUser = null;
-        try (Connection connection = connectionManager.getConnection();
-                PreparedStatement pst = connection.prepareStatement(SELECT_USER_BY_USERNAME_QUERY)) {
-            pst.setString(1, username);
-            try (ResultSet rs = pst.executeQuery()) {
-                if (rs.next()) {
-                    dbUser = parseUserFromResultSet(rs);
-                }
-            }
-        } catch (SQLException ex) {
-            log.error(ex.getMessage(), ex);
-            throw ex;
-        }
-        log.info("Get user by username with {} in {}",username,new Date());
-        return dbUser;
+        log.info("Get user by id {} in {}", userId, new Date());
+        return user;
     }
 
     @Override
-    public List<User> getAllUsers() throws SQLException {
+    public User getUserByUsername(String username){
+        User user = null;
+        try (Session session = sessionFactory.openSession()) {
+            CriteriaBuilder builder = session.getCriteriaBuilder();
+            CriteriaQuery<User> query = builder.createQuery(User.class);
+            Root<User> root = query.from(User.class);
 
-        List<User> usersList = new ArrayList<>();
-        try ( Connection connection = connectionManager.getConnection();
-                PreparedStatement pst = connection.prepareStatement(SELECT_ALL_USERS_QUERY)) {
-            try (ResultSet rs = pst.executeQuery()) {
-                while (rs.next()) {
-                    usersList.add(parseUserFromResultSet(rs));
-                }
+            query.select(root).where(builder.equal(root.get("username"), username));
+            Query<User> q = session.createQuery(query);
+
+            List<User> userList = q.getResultList();
+            if (!userList.isEmpty()) {
+                user = userList.get(0);
             }
-        } catch (SQLException ex) {
+        } catch (Exception e) {
+            log.error("Error getting user by username", e);
+        }
+        log.info("Get user by username {} in {}", username, new Date());
+        return user;
+    }
+
+    @Override
+    public List<User> getAllUsers(){
+        try (Session session = sessionFactory.openSession()) {
+            CriteriaBuilder criteriaBuilder = session.getCriteriaBuilder();
+            CriteriaQuery<User> query = criteriaBuilder.createQuery(User.class);
+            Root<User> root = query.from(User.class);
+            query.select(root);
+
+            TypedQuery<User> typedQuery = session.createQuery(query);
+            List<User> usersList = typedQuery.getResultList();
+
+            log.info("Get all user list in {}", new Date());
+            return usersList;
+        } catch (Exception ex) {
             log.error(ex.getMessage(), ex);
+            ex.printStackTrace();
             throw ex;
         }
-        log.info("Get all user list in {}", new Date());
-        return usersList;
     }
 
 
-
-    private User parseUserFromResultSet(ResultSet rs) throws SQLException {
-        User userMapper = User.builder().build();
-        userMapper.setId((long) Integer.parseInt(rs.getString("id")));
-        userMapper.setUsername(rs.getString("username"));
-        userMapper.setEmail(rs.getString("email"));
-        return userMapper;
-    }
 }

@@ -3,10 +3,11 @@ package com.aston.util.dto;
 import lombok.Builder;
 import lombok.Data;
 
+import java.util.Set;
+
 @Data
 @Builder
 public class UserTaskDto {
-    private int id;
-    private int userId;
-    private int taskId;
+    private UserDto user;
+    private Set<TaskDto> tasks;
 }

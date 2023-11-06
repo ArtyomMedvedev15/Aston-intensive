@@ -1,8 +1,10 @@
 package com.aston.util;
 
+import org.hibernate.HibernateException;
+
 import java.sql.SQLException;
 
-public class TransactionException extends SQLException {
+public class TransactionException extends HibernateException {
     public TransactionException(String reason) {
         super(reason);
     }

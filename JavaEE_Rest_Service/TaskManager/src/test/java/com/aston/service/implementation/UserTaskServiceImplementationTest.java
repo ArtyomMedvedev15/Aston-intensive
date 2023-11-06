@@ -1,16 +1,18 @@
 package com.aston.service.implementation;
 
 
-import com.aston.dao.api.*;
-import com.aston.dao.datasource.ConnectionManager;
-import com.aston.dao.datasource.ConnectionPoolImpl;
-import com.aston.dao.datasource.TransactionManagerImpl;
+import com.aston.dao.api.ProjectDaoApi;
+import com.aston.dao.api.TaskDaoApi;
+import com.aston.dao.api.UserDaoApi;
 import com.aston.dao.implementation.ProjectDaoImplementation;
 import com.aston.dao.implementation.TaskDaoImplementation;
 import com.aston.dao.implementation.UserDaoImplementation;
 import com.aston.dao.implementation.UserTaskDaoImplementation;
 import com.aston.util.*;
 import com.aston.util.dto.*;
+import org.flywaydb.core.Flyway;
+import org.hibernate.SessionFactory;
+import org.hibernate.cfg.Configuration;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -18,50 +20,57 @@ import org.junit.Test;
 
 import java.sql.Date;
 import java.sql.SQLException;
-import java.util.List;
 
 import static org.junit.Assert.assertThrows;
 
 public class UserTaskServiceImplementationTest {
     private static UserTaskServiceImplementation userTaskServiceImplementation;
-    private static UserServiceImplementation userServiceImplementation;
-    private static ProjectServiceImplementation projectServiceImplementation;
 
+    private static SessionFactory sessionFactory;
+    private static UserDaoApi userDaoApi;
+    private static TaskDaoApi taskDaoApi;
+    private static ProjectDaoApi projectDaoApi;
+    private static ProjectServiceImplementation projectServiceImplementation;
     private static TaskServiceImplementation taskServiceImplementation;
-    private static ConnectionPool connectionPool;
+    private static UserServiceImplementation userServiceImplementation;
+
     @BeforeClass
-    public static void init() throws ConnectionPoolException {
-        connectionPool = ConnectionPoolImpl.getInstance();
-        connectionPool.init("database");
-        TransactionManager transactionManager = new TransactionManagerImpl(connectionPool);
-        ConnectionManager connectionManager = new ConnectionManager(transactionManager);
-        UserDaoApi userDaoApi = new UserDaoImplementation(connectionManager);
-        ProjectDaoApi projectDaoApi = new ProjectDaoImplementation(connectionManager);
-        TaskDaoApi taskDaoApi = new TaskDaoImplementation(connectionManager);
-        UserTaskDaoApi userTaskDaoApi = new UserTaskDaoImplementation(connectionManager);
-        taskServiceImplementation = new TaskServiceImplementation(taskDaoApi,
-                new ProjectServiceImplementation(projectDaoApi,
-                        connectionManager,taskDaoApi,userTaskDaoApi),connectionManager);
-        userServiceImplementation = new UserServiceImplementation(userDaoApi,connectionManager);
-        userTaskServiceImplementation = new UserTaskServiceImplementation(userTaskDaoApi,userServiceImplementation,
-                taskServiceImplementation,connectionManager);
-        projectServiceImplementation = new ProjectServiceImplementation(projectDaoApi,connectionManager,taskDaoApi,userTaskDaoApi);
+    public static void init() {
+        Flyway flyway = Flyway.configure()
+                .dataSource("jdbc:postgresql://localhost:5432/taskmanagertest",
+                        "postgres", "postgres")
+                .schemas("taskmanager")
+                .locations("classpath:db/migration")
+                .load();
+        flyway.migrate();
+        Configuration configuration = new Configuration();
+        configuration.configure("hibernate-test.cfg.xml");
+        sessionFactory = configuration.buildSessionFactory();
+        userDaoApi = new UserDaoImplementation(sessionFactory);
+        taskDaoApi = new TaskDaoImplementation(sessionFactory);
+        projectDaoApi = new ProjectDaoImplementation(sessionFactory);
+        userTaskServiceImplementation = new UserTaskServiceImplementation(userDaoApi,sessionFactory,taskDaoApi, new UserTaskDaoImplementation(sessionFactory));
+        projectServiceImplementation = new ProjectServiceImplementation(projectDaoApi,sessionFactory);
+        taskServiceImplementation = new TaskServiceImplementation(taskDaoApi,projectServiceImplementation,sessionFactory, projectDaoApi);
+        userServiceImplementation = new UserServiceImplementation(userDaoApi,sessionFactory);
 
     }
 
     @AfterClass
-    public static void destroy() throws ConnectionPoolException {
-        connectionPool.destroy();
+    public static void closeSession() {
+        if (sessionFactory != null) {
+            sessionFactory.close();
+        }
     }
 
     @Test
-    public void CreateUserTaskTest_WithValidUserTask_ReturnTrue() throws SQLException, UserInvalidParameterException, UserNotFoundException, TaskInvalidParameterException, TaskNotFoundException, ProjectInvalidParameterException, ProjectNotFoundException, UserTaskAlreadyExistsException {
+    public void CreateUserTaskTest_WithValidUserTask_ReturnTrue() throws SQLException, UserNotFoundException, TaskNotFoundException, UserTaskAlreadyExistsException, ProjectNotFoundException, TaskInvalidParameterException, UserInvalidParameterException {
         ProjectDto projectDtoSave = ProjectDto.builder()
                 .name("TestProject")
                 .description("TestProject")
                 .build();
 
-        int projectId = projectServiceImplementation.createProject(projectDtoSave);
+        Long projectId = projectServiceImplementation.createProject(projectDtoSave);
 
         TaskDto taskSave = TaskDto.builder()
                 .title("TestTest")
@@ -71,38 +80,38 @@ public class UserTaskServiceImplementationTest {
                 .projectId(projectId)
                 .build();
 
-        int taskId = taskServiceImplementation.createTask(taskSave);
+        Long taskId = taskServiceImplementation.createTask(taskSave);
 
         UserDto userSave = UserDto.builder()
                 .email("testsaveuser@mail.cas")
                 .username("usertest")
                 .build();
 
-        int userId = userServiceImplementation.createUser(userSave);
+        Long userId = userServiceImplementation.createUser(userSave);
 
-        UserTaskDto userTaskSave = UserTaskDto.builder()
+        UserTaskSaveDto userTaskSave = UserTaskSaveDto.builder()
                 .userId(userId)
                 .taskId(taskId)
                 .build();
 
-        int userTaskSaveResult = userTaskServiceImplementation.createUserTask(userTaskSave);
+        userTaskServiceImplementation.createUserTask(userTaskSave);
 
-        Assert.assertTrue(userTaskSaveResult>0);
+        Assert.assertTrue(userTaskServiceImplementation.getAllUserTaskByUser(userId).getTasks().size()>0);
 
         taskServiceImplementation.deleteTask(taskId);
         projectServiceImplementation.deleteProject(projectId);
         userServiceImplementation.deleteUser(userId);
-        userTaskServiceImplementation.deleteUserTask(userTaskSaveResult);
+        userTaskServiceImplementation.deleteUserTask(userId,taskId);
     }
 
 
     @Test
-    public void CreateUserTaskTest_WithExistsTaskUserTask_ReturnTrue() throws SQLException, UserInvalidParameterException, UserNotFoundException, TaskInvalidParameterException, TaskNotFoundException, ProjectInvalidParameterException, ProjectNotFoundException, UserTaskAlreadyExistsException {
+    public void CreateUserTaskTest_WithExistsTaskUserTask_ReturnTrue() throws UserInvalidParameterException, UserNotFoundException, TaskInvalidParameterException, TaskNotFoundException, ProjectInvalidParameterException, ProjectNotFoundException, UserTaskAlreadyExistsException, SQLException {
         ProjectDto projectDtoSave = ProjectDto.builder()
                 .name("TestProject")
                 .description("TestProject")
                 .build();
-        int projectId = projectServiceImplementation.createProject(projectDtoSave);
+        Long projectId = projectServiceImplementation.createProject(projectDtoSave);
         TaskDto taskSave = TaskDto.builder()
                 .title("TestTest")
                 .description("TesTestTestt")
@@ -110,13 +119,13 @@ public class UserTaskServiceImplementationTest {
                 .status("Open")
                 .projectId(projectId)
                 .build();
-        int taskId = taskServiceImplementation.createTask(taskSave);
+        Long taskId = taskServiceImplementation.createTask(taskSave);
         UserDto userSave = UserDto.builder()
                 .email("testsaveuser@mail.cas")
                 .username("usertest")
                 .build();
-        int userId = userServiceImplementation.createUser(userSave);
-        UserTaskDto userTaskSave = UserTaskDto.builder()
+        Long userId = userServiceImplementation.createUser(userSave);
+        UserTaskSaveDto userTaskSave = UserTaskSaveDto.builder()
                 .userId(userId)
                 .taskId(taskId)
                 .build();
@@ -140,7 +149,7 @@ public class UserTaskServiceImplementationTest {
                 .description("TestProject")
                 .build();
 
-        int projectId = projectServiceImplementation.createProject(projectDtoSave);
+        Long projectId = projectServiceImplementation.createProject(projectDtoSave);
 
         TaskDto taskSave = TaskDto.builder()
                 .title("TestTest")
@@ -150,74 +159,32 @@ public class UserTaskServiceImplementationTest {
                 .projectId(projectId)
                 .build();
 
-        int taskId = taskServiceImplementation.createTask(taskSave);
+        Long taskId = taskServiceImplementation.createTask(taskSave);
 
         UserDto userSave = UserDto.builder()
                 .email("testsaveuser@mail.cas")
                 .username("usertest")
                 .build();
 
-        int userId = userServiceImplementation.createUser(userSave);
+        Long userId = userServiceImplementation.createUser(userSave);
 
-        UserTaskDto userTaskSave = UserTaskDto.builder()
+        UserTaskSaveDto userTaskSave = UserTaskSaveDto.builder()
                 .userId(userId)
                 .taskId(taskId)
                 .build();
 
-        int userTaskId = userTaskServiceImplementation.createUserTask(userTaskSave);
+        userTaskServiceImplementation.createUserTask(userTaskSave);
 
-        List<UserTaskFullDto> allUserTaskByUserByUserId = userTaskServiceImplementation.getAllUserTaskByUser(userId);
+        UserTaskDto allUserTaskByUserByUserId = userTaskServiceImplementation.getAllUserTaskByUser(userId);
 
-        Assert.assertTrue(allUserTaskByUserByUserId.size()>0);
-
-        taskServiceImplementation.deleteTask(taskId);
-        projectServiceImplementation.deleteProject(projectId);
-        userServiceImplementation.deleteUser(userId);
-        userTaskServiceImplementation.deleteUserTask(userTaskId);
-    }
-
-    @Test
-    public void GetAllUsersTaskTest_ReturnTrue() throws UserInvalidParameterException, SQLException, UserNotFoundException, TaskInvalidParameterException, TaskNotFoundException, ProjectInvalidParameterException, ProjectNotFoundException, UserTaskAlreadyExistsException {
-        ProjectDto projectDtoSave = ProjectDto.builder()
-                .name("TestProject")
-                .description("TestProject")
-                .build();
-
-        int projectId = projectServiceImplementation.createProject(projectDtoSave);
-
-        TaskDto taskSave = TaskDto.builder()
-                .title("TestTest")
-                .description("TestTestTest")
-                .deadline(new Date(new java.util.Date().getTime()))
-                .status("Open")
-                .projectId(projectId)
-                .build();
-
-        int taskId = taskServiceImplementation.createTask(taskSave);
-
-        UserDto userSave = UserDto.builder()
-                .email("testsaveuser@mail.cas")
-                .username("usertest")
-                .build();
-
-        int userId = userServiceImplementation.createUser(userSave);
-
-        UserTaskDto userTaskSave = UserTaskDto.builder()
-                .userId(userId)
-                .taskId(taskId)
-                .build();
-
-        int userTaskId = userTaskServiceImplementation.createUserTask(userTaskSave);
-
-        List<UserTaskFullDto> allUserTaskByUserByUserId = userTaskServiceImplementation.getAllUsersTask();
-
-        Assert.assertTrue(allUserTaskByUserByUserId.size()>0);
+        Assert.assertTrue(allUserTaskByUserByUserId.getTasks().size()>0);
 
         taskServiceImplementation.deleteTask(taskId);
         projectServiceImplementation.deleteProject(projectId);
         userServiceImplementation.deleteUser(userId);
-        userTaskServiceImplementation.deleteUserTask(userTaskId);
+        userTaskServiceImplementation.deleteUserTask(userId,taskId);
     }
+
 
     @Test
     public void DeleteUserTaskTest_WithExistsUserTask_ReturnTrue() throws SQLException, UserInvalidParameterException, UserNotFoundException, TaskInvalidParameterException, TaskNotFoundException, ProjectInvalidParameterException, ProjectNotFoundException, UserTaskAlreadyExistsException {
@@ -226,7 +193,7 @@ public class UserTaskServiceImplementationTest {
                 .description("TestProject")
                 .build();
 
-        int projectId = projectServiceImplementation.createProject(projectDtoSave);
+        Long projectId = projectServiceImplementation.createProject(projectDtoSave);
 
         TaskDto taskSave = TaskDto.builder()
                 .title("TestTest")
@@ -236,24 +203,24 @@ public class UserTaskServiceImplementationTest {
                 .projectId(projectId)
                 .build();
 
-        int taskId = taskServiceImplementation.createTask(taskSave);
+        Long taskId = taskServiceImplementation.createTask(taskSave);
 
         UserDto userSave = UserDto.builder()
                 .email("testsaveuser@mail.cas")
                 .username("usertest")
                 .build();
 
-        int userId = userServiceImplementation.createUser(userSave);
+        Long userId = userServiceImplementation.createUser(userSave);
 
-        UserTaskDto userTaskSave = UserTaskDto.builder()
+        UserTaskSaveDto userTaskSave = UserTaskSaveDto.builder()
                 .userId(userId)
                 .taskId(taskId)
                 .build();
 
-        int userTaskId = userTaskServiceImplementation.createUserTask(userTaskSave);
-        int userDeleteResult = userTaskServiceImplementation.deleteUserTask(userTaskId);
+        userTaskServiceImplementation.createUserTask(userTaskSave);
+        userTaskServiceImplementation.deleteUserTask(userId,taskId);
 
-        Assert.assertTrue(userDeleteResult>0);
+        Assert.assertTrue(userTaskServiceImplementation.getAllUserTaskByUser(userId).getTasks().size()>0);
 
         taskServiceImplementation.deleteTask(taskId);
         projectServiceImplementation.deleteProject(projectId);

@@ -1,108 +1,111 @@
 package com.aston.dao.implementation;
 
 import com.aston.dao.api.UserTaskDaoApi;
-import com.aston.dao.datasource.ConnectionManager;
+import com.aston.entities.Task;
+import com.aston.entities.User;
 import com.aston.entities.UserTask;
+import jakarta.persistence.criteria.*;
 import lombok.extern.slf4j.Slf4j;
+import org.hibernate.Session;
+import org.hibernate.SessionFactory;
+import org.hibernate.Transaction;
+import org.hibernate.query.Query;
 
-import java.sql.*;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
 @Slf4j
 public class UserTaskDaoImplementation implements UserTaskDaoApi {
 
-    private static final String INSERT_USER_TASK_QUERY = "INSERT INTO taskmaneger.usertask(userid,taskid) VALUES(?,?)";
-    private static final String DELETE_USER_TASK_QUERY = "DELETE FROM taskmaneger.usertask WHERE id = ?";
-    private static final String SELECT_USER_TASK_BY_USER_QUERY = "SELECT * FROM taskmaneger.usertask WHERE userid = ?";
-    private static final String SELECT_ALL_USER_TASK_QUERY = "SELECT * FROM taskmaneger.usertask";
+    private final SessionFactory sessionFactory;
 
-    private final ConnectionManager connectionManager;
+    public UserTaskDaoImplementation(SessionFactory sessionFactory) {
+        this.sessionFactory = sessionFactory;
+    }
 
-    public UserTaskDaoImplementation(ConnectionManager connectionManager) {
 
-        this.connectionManager = connectionManager;
+    @Override
+    public Long createUserTask(UserTask userTask) {
+        Long userId = 0L;
+        try (Session session = sessionFactory.openSession()) {
+            Transaction transaction = session.beginTransaction();
+            try {
+                session.persist(userTask);
+                session.flush();
+                userId = userTask.getUser().getId();
+                transaction.commit();
+                log.info("Save new user task with id {} in {}", userTask.getUser().getId(), new Date());
+            }catch (Exception ex) {
+                transaction.rollback();
+                log.error("Error while saving project: " + ex.getMessage(), ex);
+                ex.printStackTrace();
+            }
+        }
+        return userId;
     }
 
     @Override
-    public int createUserTask(UserTask userTask) throws SQLException {
-        try (Connection connection = connectionManager.getConnection();
-              PreparedStatement pst = connection.prepareStatement(INSERT_USER_TASK_QUERY, Statement.RETURN_GENERATED_KEYS)) {
-            pst.setInt(1, userTask.getUserId());
-            pst.setInt(2, userTask.getTaskId());
-            pst.executeUpdate();
-            try (ResultSet rs = pst.getGeneratedKeys()) {
-                rs.next();
-                int id = rs.getInt(1);
-                log.info("Save new user task with id {} in {}",id,new Date());
-                return id;
-            }
-        } catch (SQLException ex) {
-            log.error(ex.getMessage(), ex);
-            throw ex;
+    public List<UserTask> getAllUsersTaskByUser(Long userId) {
+        try (Session session = sessionFactory.openSession()) {
+            CriteriaBuilder builder = session.getCriteriaBuilder();
+            CriteriaQuery<UserTask> criteria = builder.createQuery(UserTask.class);
+            Root<UserTask> root = criteria.from(UserTask.class);
+            criteria.select(root);
+            Join<UserTask, User> userJoin = root.join("user", JoinType.INNER);
+            Predicate userPredicate = builder.equal(userJoin.get("id"), userId);
+            criteria.where(userPredicate);
+            Query<UserTask> query = session.createQuery(criteria);
+            List<UserTask> userTasks = query.getResultList();
+
+            log.info("Get user tasks by user id {} in {}", userId, new Date());
+            return userTasks;
+        } catch (Exception e) {
+            log.error("Error getting user tasks by user id", e);
+            throw e;
         }
     }
 
     @Override
-    public List<UserTask> getAllUserTaskByUser(int userid) throws SQLException {
-        List<UserTask> userTaskList = new ArrayList<>();
-        try (Connection connection = connectionManager.getConnection();
-             PreparedStatement pst = connection.prepareStatement(SELECT_USER_TASK_BY_USER_QUERY)) {
-            pst.setInt(1,userid);
-            try (ResultSet rs = pst.executeQuery()) {
-                while (rs.next()) {
-                    userTaskList.add(parseUserTaskFromResultSet(rs));
+    public UserTask getUserTaskByUserAndTask(User user, Task task) {
+        try (Session session = sessionFactory.openSession()) {
+            CriteriaBuilder builder = session.getCriteriaBuilder();
+            CriteriaQuery<UserTask> criteria = builder.createQuery(UserTask.class);
+            Root<UserTask> root = criteria.from(UserTask.class);
+
+            Predicate userCondition = builder.equal(root.get("user"), user);
+            Predicate taskCondition = builder.equal(root.get("task"), task);
+
+            criteria.where(userCondition, taskCondition);
+
+            Query<UserTask> query = session.createQuery(criteria);
+            List<UserTask> userTasks = query.getResultList();
+
+            return userTasks.isEmpty() ? null : userTasks.get(0);
+        }
+    }
+    @Override
+    public Long deleteUserTask(UserTask userTaskDelete) {
+        long rowsDeleted = 0;
+        try (Session session = sessionFactory.openSession()) {
+            Transaction transaction = session.beginTransaction();
+
+            try {
+                UserTask userTask = session.get(UserTask.class, userTaskDelete.getId());
+                if (userTask != null) {
+                    session.remove(userTask);
+                    transaction.commit();
+                    rowsDeleted = 1;
                 }
-            }
-        } catch (SQLException ex) {
-            log.error(ex.getMessage(), ex);
-            throw ex;
-        }
-        log.info("Get all user task with user id {} in {}",userid, new Date());
-        return userTaskList;
-    }
-
-    @Override
-    public List<UserTask> getAllUsersTask() throws SQLException {
-
-        List<UserTask> userTaskList = new ArrayList<>();
-        try (Connection connection = connectionManager.getConnection();
-                PreparedStatement pst = connection.prepareStatement(SELECT_ALL_USER_TASK_QUERY)) {
-             try (ResultSet rs = pst.executeQuery()) {
-                while (rs.next()) {
-                    userTaskList.add(parseUserTaskFromResultSet(rs));
+            } catch (Exception e) {
+                if (transaction != null) {
+                    transaction.rollback();
                 }
+                log.error("Error deleting user task", e);
             }
-        } catch (SQLException ex) {
-            log.error(ex.getMessage(), ex);
-            throw ex;
         }
-        log.info("Get all user task in {}",new Date());
-        return userTaskList;
+
+        log.info("Delete user task with id {} in {}", userTaskDelete.getId(), new Date());
+        return rowsDeleted;
     }
 
-    @Override
-    public int deleteUserTask(int id) throws SQLException {
-
-        int updated_rows;
-        try ( Connection connection = connectionManager.getConnection();
-               PreparedStatement pst = connection.prepareStatement(DELETE_USER_TASK_QUERY)) {
-            pst.setLong(1, id);
-            updated_rows = pst.executeUpdate();
-        } catch (SQLException ex) {
-            log.error(ex.getMessage(), ex);
-            throw ex;
-        }
-        log.info("Delete user task with id {} in {}",id,new Date());
-        return updated_rows;
-    }
-
-    private UserTask parseUserTaskFromResultSet(ResultSet rs) throws SQLException {
-        UserTask userTaskMapper = UserTask.builder().build();
-        userTaskMapper.setId(Integer.parseInt(rs.getString("id")));
-        userTaskMapper.setUserId(rs.getInt("userid"));
-        userTaskMapper.setTaskId(rs.getInt("taskid"));
-        return userTaskMapper;
-    }
 }

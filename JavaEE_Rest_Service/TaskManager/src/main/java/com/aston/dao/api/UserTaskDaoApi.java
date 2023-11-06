@@ -1,13 +1,14 @@
 package com.aston.dao.api;
 
+import com.aston.entities.Task;
+import com.aston.entities.User;
 import com.aston.entities.UserTask;
 
-import java.sql.SQLException;
 import java.util.List;
 
 public interface UserTaskDaoApi {
-    int createUserTask(UserTask userTask) throws SQLException;
-    List<UserTask>getAllUserTaskByUser(int userid) throws SQLException;
-    List<UserTask>getAllUsersTask() throws SQLException;
-    int deleteUserTask(int id) throws SQLException;
+    Long createUserTask(UserTask UserTask);
+    List<UserTask> getAllUsersTaskByUser(Long userId);
+    Long deleteUserTask(UserTask UserTask);
+    UserTask getUserTaskByUserAndTask(User user, Task task);
 }

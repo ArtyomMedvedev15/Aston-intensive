@@ -2,20 +2,18 @@ package com.aston.service.implementation;
 
 
 import com.aston.dao.api.*;
-import com.aston.dao.datasource.ConnectionManager;
-import com.aston.dao.datasource.ConnectionPoolImpl;
-import com.aston.dao.datasource.TransactionManagerImpl;
 import com.aston.dao.implementation.ProjectDaoImplementation;
 import com.aston.dao.implementation.TaskDaoImplementation;
-import com.aston.dao.implementation.UserTaskDaoImplementation;
 import com.aston.service.api.ProjectServiceApi;
 import com.aston.util.*;
 import com.aston.util.dto.ProjectDto;
 import com.aston.util.dto.TaskDto;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.flywaydb.core.Flyway;
+import org.hibernate.Session;
+import org.hibernate.SessionFactory;
+import org.hibernate.Transaction;
+import org.hibernate.cfg.Configuration;
+import org.junit.*;
 
 import java.sql.Date;
 import java.sql.SQLException;
@@ -26,63 +24,90 @@ import static org.junit.Assert.assertThrows;
 public class TaskServiceImplementationTest {
 
     private static TaskServiceImplementation taskServiceImplementation;
-    private static ConnectionPool connectionPool;
     private static ProjectServiceApi projectServiceImplementation;
+    private static SessionFactory sessionFactory;
+    private static TaskDaoApi taskDaoApi;
+    private static ProjectDaoApi projectDaoApi;
     @BeforeClass
-    public static void init() throws ConnectionPoolException {
-        connectionPool = ConnectionPoolImpl.getInstance();
-        connectionPool.init("database");
-        TransactionManager transactionManager = new TransactionManagerImpl(connectionPool);
-        ConnectionManager connectionManager = new ConnectionManager(transactionManager);
-        ProjectDaoApi projectDaoApi = new ProjectDaoImplementation(connectionManager);
-        TaskDaoApi taskDaoApi = new TaskDaoImplementation(connectionManager);
-        UserTaskDaoApi userTaskDaoApi = new UserTaskDaoImplementation(connectionManager);
-        taskServiceImplementation = new TaskServiceImplementation(taskDaoApi,
-                new ProjectServiceImplementation(projectDaoApi,
-                        connectionManager,taskDaoApi,userTaskDaoApi),connectionManager);
-        projectServiceImplementation = new ProjectServiceImplementation(projectDaoApi,connectionManager,taskDaoApi,userTaskDaoApi);
+    public static void init(){
+        Flyway flyway = Flyway.configure()
+                .dataSource("jdbc:postgresql://localhost:5432/taskmanagertest",
+                        "postgres", "postgres")
+                .schemas("taskmanager")
+                .locations("classpath:db/migration")
+                .load();
+        flyway.migrate();
+        Configuration configuration = new Configuration();
+        configuration.configure("hibernate-test.cfg.xml");
+        sessionFactory = configuration.buildSessionFactory();
+        taskDaoApi = new TaskDaoImplementation(sessionFactory);
+        projectDaoApi = new ProjectDaoImplementation(sessionFactory);
+        projectServiceImplementation = new ProjectServiceImplementation(projectDaoApi,sessionFactory);
+        taskServiceImplementation = new TaskServiceImplementation(taskDaoApi,projectServiceImplementation,sessionFactory, projectDaoApi);
 
     }
 
+    @After
+    public void cleanup() {
+        Session session = sessionFactory.openSession();
+        Transaction tx = session.beginTransaction();
+        session.createQuery("DELETE FROM Task").executeUpdate();
+        session.createQuery("DELETE FROM Project ").executeUpdate();
+        tx.commit();
+        session.close();
+    }
+
     @AfterClass
-    public static void destroy() throws ConnectionPoolException {
-        connectionPool.destroy();
+    public static void closeSession() {
+        if (sessionFactory != null) {
+            sessionFactory.close();
+        }
     }
 
 
     @Test
-    public void CreateTaskTest_WithValidTask_ReturnTrue() throws SQLException, TaskInvalidParameterException, TaskNotFoundException, ProjectInvalidParameterException, ProjectNotFoundException {
+    public void CreateTaskTest_WithValidTask_ReturnTrue() throws SQLException, ProjectNotFoundException, ProjectInvalidParameterException, TaskInvalidParameterException {
         ProjectDto projectDtoSave = ProjectDto.builder()
                 .name("TestProject")
                 .description("TestProject")
                 .build();
 
-        int projectId = projectServiceImplementation.createProject(projectDtoSave);
+        Long projectSaveId = projectServiceImplementation.createProject(projectDtoSave);
+
+        ProjectDto projectId = projectServiceImplementation.getProjectById(projectSaveId);
 
         TaskDto taskSave = TaskDto.builder()
                 .title("TestTest")
                 .description("TestTestTest")
                 .deadline(new Date(new java.util.Date().getTime()))
                 .status("Open1")
-                .projectId(projectId)
+                .projectId(projectSaveId)
+                .project(projectId)
                 .build();
 
-        int taskSaveResult = taskServiceImplementation.createTask(taskSave);
+        Long taskSaveResult = taskServiceImplementation.createTask(taskSave);
 
         Assert.assertTrue(taskSaveResult>0);
-
-        taskServiceImplementation.deleteTask(taskSaveResult);
-        projectServiceImplementation.deleteProject(projectId);
     }
 
     @Test
-    public void CreateTaskTest_WithTitleLess5_ThrowException(){
+    public void CreateTaskTest_WithTitleLess5_ThrowException() throws ProjectInvalidParameterException, SQLException, ProjectNotFoundException {
+        ProjectDto projectDtoSave = ProjectDto.builder()
+                .name("TestProject")
+                .description("TestProject")
+                .build();
+
+        Long projectSaveId = projectServiceImplementation.createProject(projectDtoSave);
+
+        ProjectDto projectId = projectServiceImplementation.getProjectById(projectSaveId);
+
         TaskDto taskSave = TaskDto.builder()
                 .title("Test")
                 .description("Test")
                 .deadline(new Date(new java.util.Date().getTime()))
                 .status("Open")
-                .projectId(777)
+                .projectId(projectSaveId)
+                .project(projectId)
                 .build();
 
         TaskInvalidParameterException taskInvalidParameterException = assertThrows(
@@ -94,7 +119,16 @@ public class TaskServiceImplementationTest {
     }
 
     @Test
-    public void CreateTaskTest_WithTitleMore256_ThrowException(){
+    public void CreateTaskTest_WithTitleMore256_ThrowException() throws ProjectInvalidParameterException, SQLException, ProjectNotFoundException {
+        ProjectDto projectDtoSave = ProjectDto.builder()
+                .name("TestProject")
+                .description("TestProject")
+                .build();
+
+        Long projectSaveId = projectServiceImplementation.createProject(projectDtoSave);
+
+        ProjectDto projectId = projectServiceImplementation.getProjectById(projectSaveId);
+
         TaskDto taskSave = TaskDto.builder()
                 .title("TesttestteTesttestteTesttestteTesttestteTesttestteTesttestteTesttestteTe\" +\n" +
                         "                        \"sttestteTesttestteTesttestteTesttestteTesttestteTesttestteTesttestteTesttest\" +\n" +
@@ -104,7 +138,8 @@ public class TaskServiceImplementationTest {
                 .description("Testtesttest")
                 .deadline(new Date(new java.util.Date().getTime()))
                 .status("Open")
-                .projectId(777)
+                .projectId(projectSaveId)
+                .project(projectId)
                 .build();
 
         TaskInvalidParameterException taskInvalidParameterException = assertThrows(
@@ -115,13 +150,23 @@ public class TaskServiceImplementationTest {
     }
 
     @Test
-    public void CreateTaskTest_WithDescriptionLess10_ThrowException(){
+    public void CreateTaskTest_WithDescriptionLess10_ThrowException() throws ProjectInvalidParameterException, SQLException, ProjectNotFoundException {
+        ProjectDto projectDtoSave = ProjectDto.builder()
+                .name("TestProject")
+                .description("TestProject")
+                .build();
+
+        Long projectSaveId = projectServiceImplementation.createProject(projectDtoSave);
+
+        ProjectDto projectId = projectServiceImplementation.getProjectById(projectSaveId);
+
         TaskDto taskSave = TaskDto.builder()
                 .title("Test1")
                 .description("Test")
                 .deadline(new Date(new java.util.Date().getTime()))
                 .status("Open")
-                .projectId(777)
+                .projectId(projectSaveId)
+                .project(projectId)
                 .build();
 
         TaskInvalidParameterException taskInvalidParameterException = assertThrows(
@@ -132,7 +177,16 @@ public class TaskServiceImplementationTest {
     }
 
     @Test
-    public void CreateTaskTest_WithDescriptionMore512_ThrowException(){
+    public void CreateTaskTest_WithDescriptionMore512_ThrowException() throws ProjectInvalidParameterException, SQLException, ProjectNotFoundException {
+        ProjectDto projectDtoSave = ProjectDto.builder()
+                .name("TestProject")
+                .description("TestProject")
+                .build();
+
+        Long projectSaveId = projectServiceImplementation.createProject(projectDtoSave);
+
+        ProjectDto projectId = projectServiceImplementation.getProjectById(projectSaveId);
+
         TaskDto taskSave = TaskDto.builder()
                 .title("Test1")
                 .description("TesttestteTesttestteTesttestteTesttestteTesttestteTesttestteTesttestteTe\" +\n" +
@@ -146,7 +200,8 @@ public class TaskServiceImplementationTest {
                         "                        \"testteTesttestteTesttestteTesttestteTesttestte")
                 .deadline(new Date(new java.util.Date().getTime()))
                 .status("Open")
-                .projectId(777)
+                .projectId(projectSaveId)
+                .project(projectId)
                 .build();
 
         TaskInvalidParameterException taskInvalidParameterException = assertThrows(
@@ -157,137 +212,122 @@ public class TaskServiceImplementationTest {
     }
 
     @Test
-    public void GetTaskByIdTest_WithExistsTask_ReturnTrue() throws SQLException, TaskNotFoundException, TaskInvalidParameterException, ProjectInvalidParameterException, ProjectNotFoundException {
+    public void GetTaskByIdTest_WithExistsTask_ReturnTrue() throws SQLException, ProjectInvalidParameterException, ProjectNotFoundException, TaskInvalidParameterException {
         ProjectDto projectDtoSave = ProjectDto.builder()
                 .name("TestProject")
                 .description("TestProject")
                 .build();
 
-        int projectId = projectServiceImplementation.createProject(projectDtoSave);
+        Long projectSaveId = projectServiceImplementation.createProject(projectDtoSave);
+
+        ProjectDto projectId = projectServiceImplementation.getProjectById(projectSaveId);
 
         TaskDto taskSave = TaskDto.builder()
                 .title("TestTest")
                 .description("TestTestTest")
                 .deadline(new Date(new java.util.Date().getTime()))
                 .status("Open")
-                .projectId(projectId)
+                .projectId(projectSaveId)
+                .project(projectId)
                 .build();
 
-        int taskId = taskServiceImplementation.createTask(taskSave);
+        Long taskId = taskServiceImplementation.createTask(taskSave);
 
         TaskDto taskById = taskServiceImplementation.getTaskById(taskId);
 
         Assert.assertEquals("TestTest", taskById.getTitle());
-
-        taskServiceImplementation.deleteTask(taskId);
-        projectServiceImplementation.deleteProject(projectId);
-
     }
 
     @Test
     public void GetTaskByIdTest_WithNonExistsTask_ReturnTrue()  {
-        TaskNotFoundException taskNotFoundException = assertThrows(
-                TaskNotFoundException.class,
-                () -> taskServiceImplementation.getTaskById(989898));
+        TransactionException taskNotFoundException = assertThrows(
+                TransactionException.class,
+                () -> taskServiceImplementation.getTaskById(989898L));
 
-        Assert.assertEquals("Task with id 989898 was not found", taskNotFoundException.getMessage());
+        Assert.assertEquals("Error with with database with message Task with id 989898 was not found", taskNotFoundException.getMessage());
     }
 
     @Test
-    public void GetAllTasksTest_ReturnTrue() throws SQLException, TaskInvalidParameterException, TaskNotFoundException, ProjectInvalidParameterException, ProjectNotFoundException {
+    public void GetAllTasksTest_ReturnTrue() throws SQLException, ProjectInvalidParameterException, ProjectNotFoundException, TaskInvalidParameterException {
         ProjectDto projectDtoSave = ProjectDto.builder()
                 .name("TestProject")
                 .description("TestProject")
                 .build();
 
-        int projectId = projectServiceImplementation.createProject(projectDtoSave);
+        Long projectSaveId = projectServiceImplementation.createProject(projectDtoSave);
+
+        ProjectDto projectId = projectServiceImplementation.getProjectById(projectSaveId);
 
         TaskDto taskSave = TaskDto.builder()
                 .title("TestTest")
                 .description("TestTestTest")
                 .deadline(new Date(new java.util.Date().getTime()))
                 .status("Open")
-                .projectId(projectId)
+                .projectId(projectSaveId)
+                .project(projectId)
                 .build();
 
-        int taskId = taskServiceImplementation.createTask(taskSave);
+        taskServiceImplementation.createTask(taskSave);
 
         List<TaskDto> allTasks = taskServiceImplementation.getAllTasks();
 
         Assert.assertTrue(allTasks.size()>0);
-
-        taskServiceImplementation.deleteTask(taskId);
-        projectServiceImplementation.deleteProject(projectId);
     }
 
     @Test
-    public void GetAllTasksByProjectTest_WithExistsProject_ReturnTrue() throws SQLException, TaskInvalidParameterException, TaskNotFoundException, ProjectInvalidParameterException, ProjectNotFoundException {
+    public void UpdateTaskTest_WithValidTask_ReturnTrue() throws SQLException, ProjectInvalidParameterException, ProjectNotFoundException, TaskInvalidParameterException {
         ProjectDto projectDtoSave = ProjectDto.builder()
                 .name("TestProject")
                 .description("TestProject")
                 .build();
 
-        int projectId = projectServiceImplementation.createProject(projectDtoSave);
+        Long projectSaveId = projectServiceImplementation.createProject(projectDtoSave);
 
-        TaskDto taskSave = TaskDto.builder()
-                .title("TestTest")
-                .description("TestTestTest")
-                .deadline(new Date(new java.util.Date().getTime()))
-                .status("Open1")
-                .projectId(projectId)
-                .build();
+        ProjectDto projectId = projectServiceImplementation.getProjectById(projectSaveId);
 
-        int taskId = taskServiceImplementation.createTask(taskSave);
-
-        List<TaskDto> allTasks = taskServiceImplementation.getAllTasksByProject(projectId);
-
-        Assert.assertTrue(allTasks.size()>0);
-
-        taskServiceImplementation.deleteTask(taskId);
-        projectServiceImplementation.deleteProject(projectId);
-    }
-
-    @Test
-    public void UpdateTaskTest_WithValidTask_ReturnTrue() throws SQLException, TaskInvalidParameterException, TaskNotFoundException, ProjectInvalidParameterException, ProjectNotFoundException {
-        ProjectDto projectDtoSave = ProjectDto.builder()
-                .name("TestProject")
-                .description("TestProject")
-                .build();
-
-        int projectId = projectServiceImplementation.createProject(projectDtoSave);
         TaskDto taskSave = TaskDto.builder()
                 .title("TestTest")
                 .description("TestTestTest")
                 .deadline(new Date(new java.util.Date().getTime()))
                 .status("Open")
-                .projectId(projectId)
+                .projectId(projectSaveId)
+                .project(projectId)
                 .build();
-        int taskId = taskServiceImplementation.createTask(taskSave);
+        Long taskId = taskServiceImplementation.createTask(taskSave);
 
         TaskDto taskUpdate = TaskDto.builder()
-                .id((long) taskId)
+                .id(taskId)
                 .title("Update")
                 .description("UpdateUpdate")
                 .deadline(new Date(new java.util.Date().getTime()))
                 .status("Open")
-                .projectId(projectId)
+                .projectId(projectSaveId)
+                .project(projectId)
                 .build();
 
-        int taskUpdateResult = taskServiceImplementation.updateTask(taskUpdate);
+        Long taskUpdateResult = taskServiceImplementation.updateTask(taskUpdate);
 
         Assert.assertTrue(taskUpdateResult>0);
-
-        taskServiceImplementation.deleteTask(taskId);
-    }
+     }
 
     @Test
-    public void UpdateTaskTest_WithTitleLessThan5_ReturnTrue(){
+    public void UpdateTaskTest_WithTitleLessThan5_ReturnTrue() throws ProjectInvalidParameterException, SQLException, ProjectNotFoundException {
+        ProjectDto projectDtoSave = ProjectDto.builder()
+                .name("TestProject")
+                .description("TestProject")
+                .build();
+
+        Long projectSaveId = projectServiceImplementation.createProject(projectDtoSave);
+
+        ProjectDto projectId = projectServiceImplementation.getProjectById(projectSaveId);
+
         TaskDto taskSave = TaskDto.builder()
                 .title("Test")
                 .description("Test")
                 .deadline(new Date(new java.util.Date().getTime()))
                 .status("Open")
-                .projectId(777)
+                .projectId(projectSaveId)
+                .project(projectId)
                 .build();
 
         TaskInvalidParameterException taskInvalidParameterException = assertThrows(
@@ -299,7 +339,16 @@ public class TaskServiceImplementationTest {
     }
 
     @Test
-    public void UpdateTaskTest_WithTitleMoreThan256_ReturnTrue(){
+    public void UpdateTaskTest_WithTitleMoreThan256_ReturnTrue() throws ProjectInvalidParameterException, SQLException, ProjectNotFoundException {
+        ProjectDto projectDtoSave = ProjectDto.builder()
+                .name("TestProject")
+                .description("TestProject")
+                .build();
+
+        Long projectSaveId = projectServiceImplementation.createProject(projectDtoSave);
+
+        ProjectDto projectId = projectServiceImplementation.getProjectById(projectSaveId);
+
         TaskDto taskSave = TaskDto.builder()
                 .title("TesttestteTesttestteTesttestteTesttestteTesttestteTesttestteTesttestteTe\" +\n" +
                         "                        \"sttestteTesttestteTesttestteTesttestteTesttestteTesttestteTesttestteTesttest\" +\n" +
@@ -309,7 +358,8 @@ public class TaskServiceImplementationTest {
                 .description("Testtesttest")
                 .deadline(new Date(new java.util.Date().getTime()))
                 .status("Open")
-                .projectId(777)
+                .projectId(projectSaveId)
+                .project(projectId)
                 .build();
 
         TaskInvalidParameterException taskInvalidParameterException = assertThrows(
@@ -320,13 +370,23 @@ public class TaskServiceImplementationTest {
     }
 
     @Test
-    public void UpdateTaskTest_WithDescriptionLess10_ThrowException(){
+    public void UpdateTaskTest_WithDescriptionLess10_ThrowException() throws ProjectInvalidParameterException, SQLException, ProjectNotFoundException {
+        ProjectDto projectDtoSave = ProjectDto.builder()
+                .name("TestProject")
+                .description("TestProject")
+                .build();
+
+        Long projectSaveId = projectServiceImplementation.createProject(projectDtoSave);
+
+        ProjectDto projectId = projectServiceImplementation.getProjectById(projectSaveId);
+
         TaskDto taskSave = TaskDto.builder()
                 .title("Test1")
                 .description("Test")
                 .deadline(new Date(new java.util.Date().getTime()))
                 .status("Open")
-                .projectId(777)
+                .projectId(projectSaveId)
+                .project(projectId)
                 .build();
 
         TaskInvalidParameterException taskInvalidParameterException = assertThrows(
@@ -337,7 +397,16 @@ public class TaskServiceImplementationTest {
     }
 
     @Test
-    public void UpdateTaskTest_WithDescriptionMore512_ThrowException(){
+    public void UpdateTaskTest_WithDescriptionMore512_ThrowException() throws ProjectInvalidParameterException, SQLException, ProjectNotFoundException {
+        ProjectDto projectDtoSave = ProjectDto.builder()
+                .name("TestProject")
+                .description("TestProject")
+                .build();
+
+        Long projectSaveId = projectServiceImplementation.createProject(projectDtoSave);
+
+        ProjectDto projectId = projectServiceImplementation.getProjectById(projectSaveId);
+
         TaskDto taskSave = TaskDto.builder()
                 .title("Test1")
                 .description("TesttestteTesttestteTesttestteTesttestteTesttestteTesttestteTesttestteTe\" +\n" +
@@ -351,7 +420,8 @@ public class TaskServiceImplementationTest {
                         "                        \"testteTesttestteTesttestteTesttestteTesttestte")
                 .deadline(new Date(new java.util.Date().getTime()))
                 .status("Open")
-                .projectId(777)
+                .projectId(projectSaveId)
+                .project(projectId)
                 .build();
 
         TaskInvalidParameterException taskInvalidParameterException = assertThrows(
@@ -363,36 +433,38 @@ public class TaskServiceImplementationTest {
 
 
     @Test
-    public void DeleteTaskTest_WithExistsTask_ReturnTrue() throws SQLException, TaskInvalidParameterException, TaskNotFoundException, ProjectInvalidParameterException, ProjectNotFoundException {
+    public void DeleteTaskTest_WithExistsTask_ReturnTrue() throws SQLException, ProjectInvalidParameterException, ProjectNotFoundException, TaskInvalidParameterException, TaskNotFoundException {
         ProjectDto projectDtoSave = ProjectDto.builder()
                 .name("TestProject")
                 .description("TestProject")
                 .build();
 
-        int projectId = projectServiceImplementation.createProject(projectDtoSave);
+        Long projectSaveId = projectServiceImplementation.createProject(projectDtoSave);
+
+        ProjectDto projectId = projectServiceImplementation.getProjectById(projectSaveId);
 
         TaskDto taskSave = TaskDto.builder()
                 .title("TestTest")
                 .description("TestTestTest")
                 .deadline(new Date(new java.util.Date().getTime()))
                 .status("Open")
-                .projectId(projectId)
+                .projectId(projectSaveId)
+                .project(projectId)
                 .build();
 
-        int taskId = taskServiceImplementation.createTask(taskSave);
+        Long taskId = taskServiceImplementation.createTask(taskSave);
 
 
-        int taskDeleteResult = taskServiceImplementation.deleteTask(taskId);
+        Long taskDeleteResult = taskServiceImplementation.deleteTask(taskId);
         Assert.assertTrue(taskDeleteResult>0);
 
-        projectServiceImplementation.deleteProject(projectId);
-    }
+     }
 
     @Test
     public void DeleteTaskTest_WithNonExistsTask_ReturnTrue(){
         TaskNotFoundException taskNotFoundException = assertThrows(
                 TaskNotFoundException.class,
-                () -> taskServiceImplementation.deleteTask(989898));
+                () -> taskServiceImplementation.deleteTask(989898L));
 
         Assert.assertEquals("Task with id 989898 was not found", taskNotFoundException.getMessage());
     }
