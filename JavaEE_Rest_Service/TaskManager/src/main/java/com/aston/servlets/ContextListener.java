@@ -40,16 +40,6 @@ public class ContextListener implements ServletContextListener {
     private UserTaskDaoApi userTaskDaoApi;
     @Override
     public void contextInitialized(ServletContextEvent servletContextEvent) {
-        ConnectionPool connectionPool = ConnectionPoolImpl.getInstance();
-        try {
-            connectionPool.init("database");
-        } catch (ConnectionPoolException e) {
-            log.error(CONNECTION_POOL_INITIALIZATION_ERROR, e);
-            e.printStackTrace();
-        }
-        TransactionManager transactionManager = new TransactionManagerImpl(connectionPool);
-        ConnectionManager connectionManager = new ConnectionManager(transactionManager);
-
         Flyway flyway = Flyway.configure()
                 .dataSource("jdbc:postgresql://localhost:5432/postgres", "postgres", "postgres")
                 .schemas("taskmanager")

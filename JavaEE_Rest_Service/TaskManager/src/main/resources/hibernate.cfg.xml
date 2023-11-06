@@ -21,6 +21,8 @@
         <mapping class="com.aston.entities.Project" />
         <mapping class="com.aston.entities.Task" />
         <mapping class="com.aston.entities.UserTask" />
-
+        <mapping class="com.aston.entities.Activity"/>
+        <mapping class="com.aston.entities.Meeting"/>
+        <mapping class="com.aston.entities.Bug"/>
     </session-factory>
 </hibernate-configuration>
