@@ -1,12 +1,8 @@
 package com.aston.entities;
 
 import jakarta.persistence.*;
-
-
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 import lombok.ToString;
-
 
 import java.sql.Date;
 import java.util.HashSet;
@@ -30,7 +26,8 @@ public class Task {
     @JoinColumn(name = "project_id",referencedColumnName = "id")
     private Project project;
 
-    @ManyToMany(mappedBy = "userTask",cascade = CascadeType.ALL)
-    private Set<User> taskUser = new HashSet<>();
+
+    @OneToMany(mappedBy = "task")
+    private Set<UserTask> userTasks = new HashSet<>();
 
 }

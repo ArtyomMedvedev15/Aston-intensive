@@ -33,11 +33,11 @@ public class ContextListener implements ServletContextListener {
     private UserDaoApi userDaoApi;
     private TaskDaoApi taskDaoApi;
     private ProjectDaoApi projectDaoApi;
-    private UserTaskDaoApi userTaskDaoApi;
     private UserServiceApi userServiceApi;
     private ProjectServiceApi projectServiceApi;
     private TaskServiceApi taskServiceApi;
     private UserTaskServiceApi userTaskServiceApi;
+    private UserTaskDaoApi userTaskDaoApi;
     @Override
     public void contextInitialized(ServletContextEvent servletContextEvent) {
         ConnectionPool connectionPool = ConnectionPoolImpl.getInstance();
@@ -55,7 +55,7 @@ public class ContextListener implements ServletContextListener {
                 .schemas("taskmanager")
                 .locations("classpath:db/migration")
                 .load();
-        flyway.migrate();
+        //flyway.migrate();
 
         final ServletContext servletContext =
                 servletContextEvent.getServletContext();
@@ -67,11 +67,11 @@ public class ContextListener implements ServletContextListener {
         this.userDaoApi = new UserDaoImplementation(sessionFactory);
         this.taskDaoApi = new TaskDaoImplementation(sessionFactory);
         this.projectDaoApi = new ProjectDaoImplementation(sessionFactory);
+        this.userTaskDaoApi = new UserTaskDaoImplementation(sessionFactory);
         this.userServiceApi = new UserServiceImplementation(userDaoApi,sessionFactory);
-        this.userTaskServiceApi = new UserTaskServiceImplementation(userTaskDaoApi,userServiceApi,taskServiceApi, connectionManager);
+        this.userTaskServiceApi = new UserTaskServiceImplementation(userDaoApi, sessionFactory, taskDaoApi, new UserTaskDaoImplementation(sessionFactory));
         this.projectServiceApi = new ProjectServiceImplementation(projectDaoApi, sessionFactory);
         this.taskServiceApi = new TaskServiceImplementation(taskDaoApi,projectServiceApi,sessionFactory, projectDaoApi);
-
 
         servletContext.setAttribute("userService",userServiceApi);
         servletContext.setAttribute("userDao", userDaoApi);
@@ -82,8 +82,9 @@ public class ContextListener implements ServletContextListener {
         servletContext.setAttribute("projectService",projectServiceApi);
         servletContext.setAttribute("projectDao", projectDaoApi);
 
-        servletContext.setAttribute("userTaskDao", userTaskDaoApi);
         servletContext.setAttribute("userTaskService",userTaskServiceApi);
+
+        servletContext.setAttribute("userTaskDao",new UserTaskDaoImplementation(sessionFactory));
 
     }
 

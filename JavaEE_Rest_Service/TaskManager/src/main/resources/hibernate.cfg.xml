@@ -7,7 +7,7 @@
         <property name="hibernate.connection.url">jdbc:postgresql://localhost:5432/postgres</property>
         <property name="hibernate.connection.username">postgres</property>
         <property name="hibernate.connection.password">postgres</property>
-        <property name="hibernate.hbm2ddl.auto">validate</property>
+        <property name="hibernate.hbm2ddl.auto">create</property>
         <property name="hibernate.show_sql">true</property>
         <property name="hibernate.package_scanner.scanned_packages">com.aston.entities</property>
 
@@ -20,5 +20,7 @@
         <mapping class="com.aston.entities.User" />
         <mapping class="com.aston.entities.Project" />
         <mapping class="com.aston.entities.Task" />
+        <mapping class="com.aston.entities.UserTask" />
+
     </session-factory>
 </hibernate-configuration>

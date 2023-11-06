@@ -1,7 +1,6 @@
 package com.aston.dao.implementation;
 
 import com.aston.entities.Project;
-import com.aston.entities.Task;
 import org.flywaydb.core.Flyway;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
@@ -9,9 +8,7 @@ import org.hibernate.Transaction;
 import org.hibernate.cfg.Configuration;
 import org.junit.*;
 
-import java.sql.Date;
 import java.util.List;
-import java.util.Set;
 
 public class ProjectDaoImplementationTest {
 

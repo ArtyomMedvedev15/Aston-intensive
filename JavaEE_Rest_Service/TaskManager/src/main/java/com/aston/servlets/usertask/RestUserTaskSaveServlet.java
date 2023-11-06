@@ -5,8 +5,7 @@ import com.aston.util.ProjectNotFoundException;
 import com.aston.util.TaskNotFoundException;
 import com.aston.util.UserNotFoundException;
 import com.aston.util.UserTaskAlreadyExistsException;
-import com.aston.util.dto.ProjectDto;
-import com.aston.util.dto.UserTaskDto;
+import com.aston.util.dto.UserTaskSaveDto;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
@@ -49,7 +48,7 @@ public class RestUserTaskSaveServlet extends HttpServlet {
         int userId = jsonNode.get("userId").asInt();
         int taskId = jsonNode.get("taskId").asInt();
 
-        UserTaskDto userTaskDto = UserTaskDto.builder()
+        UserTaskSaveDto userTaskDto = UserTaskSaveDto.builder()
                 .userId((long) userId)
                 .taskId((long) taskId)
                 .build();

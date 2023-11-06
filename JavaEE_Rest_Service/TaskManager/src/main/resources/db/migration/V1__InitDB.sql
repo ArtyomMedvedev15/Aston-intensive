@@ -29,13 +29,15 @@ create table if not exists taskmanager.task
             references taskmanager.project on delete cascade
 );
 
-create table if not exists taskmanager.user_task
+
+create table taskmanager.usertask
 (
-    user_id bigint not null
-        constraint fkj6lai3y87ttxldkysg1549etg
-            references taskmanager.users on delete cascade,
-    task_id bigint not null
-        constraint fkvs34bjkmpbk2e54qlrol3ilt
+    id      bigint not null
+        primary key,
+    task_id bigint
+        constraint fk1kqdxo98ldhtsk8yepccmqjck
             references taskmanager.task on delete cascade,
-    primary key (user_id, task_id)
+    user_id bigint
+        constraint fk4id53d8cqlg1330d2cxf9vnh4
+            references taskmanager.users on delete cascade
 );

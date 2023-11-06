@@ -18,12 +18,8 @@ public class User {
     private Long id;
     private String username;
     private String email;
-    @ManyToMany(fetch = FetchType.LAZY,cascade = CascadeType.ALL)
-    @JoinTable(
-            name = "user_task",schema = "taskmanager",
-            joinColumns = @JoinColumn(name = "user_id"),
-            inverseJoinColumns = @JoinColumn(name = "task_id")
-    )
-    private Set<Task>userTask = new HashSet<>();
+
+    @OneToMany(mappedBy = "user")
+    private Set<UserTask> userTasks = new HashSet<UserTask>();
 
 }
