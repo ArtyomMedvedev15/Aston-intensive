@@ -1,5 +1,8 @@
-package com.aston.dao.implementation;
+package com.aston.service.implementation;
 
+import com.aston.dao.implementation.ActivityDaoImplementation;
+import com.aston.dao.implementation.BugDaoImplementation;
+import com.aston.dao.implementation.MeetingDaoImplemntation;
 import com.aston.entities.Activity;
 import com.aston.entities.Bug;
 import com.aston.entities.Meeting;
@@ -16,10 +19,12 @@ import java.util.List;
 
 import static org.junit.Assert.*;
 
-public class ActivityDaoImplementationTest {
+public class ActivityServiceImplementationTest {
 
-    private static ActivityDaoImplementation activityDaoImplementation;
+    private static ActivityServiceImplementation activityServiceImplementation;
     private static BugDaoImplementation bugDaoImplementation;
+    private static ActivityDaoImplementation activityDaoImplementation;
+
     private static MeetingDaoImplemntation meetingDaoImplemntation;
     private static SessionFactory sessionFactory;
 
@@ -36,6 +41,7 @@ public class ActivityDaoImplementationTest {
         configuration.configure("hibernate-test.cfg.xml");
         sessionFactory = configuration.buildSessionFactory();
         activityDaoImplementation = new ActivityDaoImplementation(sessionFactory);
+        activityServiceImplementation = new ActivityServiceImplementation(sessionFactory,activityDaoImplementation);
         bugDaoImplementation = new BugDaoImplementation(sessionFactory);
         meetingDaoImplemntation = new MeetingDaoImplemntation(sessionFactory);
     }
@@ -67,7 +73,7 @@ public class ActivityDaoImplementationTest {
         meeting.setLocationMeeting("Test");
         meetingDaoImplemntation.createMeeting(meeting);
 
-        List<Activity> activityList = activityDaoImplementation.getAllActivity();
+        List<Activity> activityList = activityServiceImplementation.getAllActivity();
 
         Assert.assertTrue(activityList.size()>0);
     }

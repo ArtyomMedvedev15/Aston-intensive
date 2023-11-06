@@ -5,14 +5,8 @@ import com.aston.dao.datasource.ConnectionManager;
 import com.aston.dao.datasource.ConnectionPoolImpl;
 import com.aston.dao.datasource.TransactionManagerImpl;
 import com.aston.dao.implementation.*;
-import com.aston.service.api.ProjectServiceApi;
-import com.aston.service.api.TaskServiceApi;
-import com.aston.service.api.UserServiceApi;
-import com.aston.service.api.UserTaskServiceApi;
-import com.aston.service.implementation.ProjectServiceImplementation;
-import com.aston.service.implementation.TaskServiceImplementation;
-import com.aston.service.implementation.UserServiceImplementation;
-import com.aston.service.implementation.UserTaskServiceImplementation;
+import com.aston.service.api.*;
+import com.aston.service.implementation.*;
 import com.aston.util.ConnectionPoolException;
 import lombok.extern.slf4j.Slf4j;
 import org.flywaydb.core.Flyway;
@@ -41,6 +35,9 @@ public class ContextListener implements ServletContextListener {
     private ActivityDaoApi activityDaoApi;
     private BugDaoApi bugDaoApi;
     private MeetingDaoApi meetingDaoApi;
+    private ActivityServiceApi activityServiceApi;
+    private BugServiceApi bugServiceApi;
+    private MeetingServiceApi meetingServiceApi;
     @Override
     public void contextInitialized(ServletContextEvent servletContextEvent) {
         Flyway flyway = Flyway.configure()
@@ -65,6 +62,9 @@ public class ContextListener implements ServletContextListener {
         this.bugDaoApi = new BugDaoImplementation(sessionFactory);
         this.meetingDaoApi = new MeetingDaoImplemntation(sessionFactory);
 
+        this.activityServiceApi = new ActivityServiceImplementation(sessionFactory,activityDaoApi);
+        this.bugServiceApi = new BugServiceImplementation(bugDaoApi,sessionFactory);
+        this.meetingServiceApi = new MeetingServiceImplementation(meetingDaoApi,sessionFactory);
         this.userServiceApi = new UserServiceImplementation(userDaoApi,sessionFactory);
         this.userTaskServiceApi = new UserTaskServiceImplementation(userDaoApi, sessionFactory, taskDaoApi, new UserTaskDaoImplementation(sessionFactory));
         this.projectServiceApi = new ProjectServiceImplementation(projectDaoApi, sessionFactory);
@@ -80,8 +80,16 @@ public class ContextListener implements ServletContextListener {
         servletContext.setAttribute("projectDao", projectDaoApi);
 
         servletContext.setAttribute("userTaskService",userTaskServiceApi);
+        servletContext.setAttribute("userTaskDao",userTaskDaoApi);
 
-        servletContext.setAttribute("userTaskDao",new UserTaskDaoImplementation(sessionFactory));
+        servletContext.setAttribute("activityDao",activityDaoApi);
+        servletContext.setAttribute("activityService",activityServiceApi);
+
+        servletContext.setAttribute("bugDao",bugDaoApi);
+        servletContext.setAttribute("bugService",bugServiceApi);
+
+        servletContext.setAttribute("meetingDao",meetingDaoApi);
+        servletContext.setAttribute("meetingService",meetingServiceApi);
 
     }
 

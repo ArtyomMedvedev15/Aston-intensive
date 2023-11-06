@@ -1,9 +1,9 @@
-package com.aston.dao.implementation;
+package com.aston.service.implementation;
 
-import com.aston.entities.Activity;
-import com.aston.entities.Bug;
+import com.aston.dao.api.MeetingDaoApi;
+import com.aston.dao.implementation.BugDaoImplementation;
+import com.aston.dao.implementation.MeetingDaoImplemntation;
 import com.aston.entities.Meeting;
-import org.checkerframework.checker.units.qual.A;
 import org.flywaydb.core.Flyway;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
@@ -12,15 +12,13 @@ import org.hibernate.cfg.Configuration;
 import org.junit.*;
 
 import java.sql.Date;
-import java.util.List;
 
 import static org.junit.Assert.*;
 
-public class ActivityDaoImplementationTest {
+public class MeetingServiceImplementationTest {
+    private static MeetingServiceImplementation meetingServiceImplementation;
+    private static MeetingDaoApi meetingDaoApi;
 
-    private static ActivityDaoImplementation activityDaoImplementation;
-    private static BugDaoImplementation bugDaoImplementation;
-    private static MeetingDaoImplemntation meetingDaoImplemntation;
     private static SessionFactory sessionFactory;
 
     @BeforeClass
@@ -35,16 +33,16 @@ public class ActivityDaoImplementationTest {
         Configuration configuration = new Configuration();
         configuration.configure("hibernate-test.cfg.xml");
         sessionFactory = configuration.buildSessionFactory();
-        activityDaoImplementation = new ActivityDaoImplementation(sessionFactory);
-        bugDaoImplementation = new BugDaoImplementation(sessionFactory);
-        meetingDaoImplemntation = new MeetingDaoImplemntation(sessionFactory);
+
+        meetingDaoApi = new MeetingDaoImplemntation(sessionFactory);
+        meetingServiceImplementation = new MeetingServiceImplementation(meetingDaoApi,sessionFactory);
     }
 
     @After
     public void cleanup() {
         Session session = sessionFactory.openSession();
         Transaction tx = session.beginTransaction();
-        session.createQuery("DELETE FROM Activity").executeUpdate();
+        session.createQuery("DELETE FROM Meeting").executeUpdate();
         tx.commit();
         session.close();
     }
@@ -54,21 +52,23 @@ public class ActivityDaoImplementationTest {
             sessionFactory.close();
         }
     }
-
     @Test
-    public void GetAllActivityTest_ReturnTrue() {
-        Bug bug = new Bug();
-        bug.setTitle("Test");
-        bug.setType("Test");
-        bugDaoImplementation.createBug(bug);
-
+    public void CreateMeetingTest_ReturnTrue() {
         Meeting meeting = new Meeting();
         meeting.setDateMeeting(new Date(new java.util.Date().getTime()));
         meeting.setLocationMeeting("Test");
-        meetingDaoImplemntation.createMeeting(meeting);
+        Long meetingSaveResult = meetingServiceImplementation.createMeeting(meeting);
 
-        List<Activity> activityList = activityDaoImplementation.getAllActivity();
+        Assert.assertTrue(meetingSaveResult>0);
+    }
 
-        Assert.assertTrue(activityList.size()>0);
+    @Test
+    public void DeleteMeetingTest_ReturnTrue() {
+        Meeting meeting = new Meeting();
+        meeting.setDateMeeting(new Date(new java.util.Date().getTime()));
+        meeting.setLocationMeeting("Test");
+        meetingServiceImplementation.createMeeting(meeting);
+        Long meetingDeleteResult = meetingServiceImplementation.deleteMeeting(meeting);
+        Assert.assertTrue(meetingDeleteResult>0);
     }
 }
