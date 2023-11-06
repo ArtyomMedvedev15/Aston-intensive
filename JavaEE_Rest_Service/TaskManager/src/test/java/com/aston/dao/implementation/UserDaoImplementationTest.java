@@ -3,10 +3,12 @@ package com.aston.dao.implementation;
 
 import com.aston.entities.User;
 import org.flywaydb.core.Flyway;
+import org.hibernate.HibernateException;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
 import org.hibernate.cfg.Configuration;
+import org.hibernate.query.Query;
 import org.junit.*;
 
 import java.util.List;
@@ -113,4 +115,5 @@ public class UserDaoImplementationTest {
         List<User> allUsersTest = userDaoImplementation.getAllUsers();
         Assert.assertTrue(allUsersTest.size()>0);
     }
+
 }

@@ -16,6 +16,12 @@
         <property name="hibernate.c3p0.timeout">300</property>
         <property name="hibernate.c3p0.max_statements">50</property>
 
+        <property name="hibernate.cache.use_second_level_cache">true</property>
+        <property name="hibernate.cache.region_prefix.factory_class">org.hibernate.cache.jcache.internal.JCacheRegionFactory</property>
+        <property name="hibernate.cache.use_query_cache">true</property>
+        <property name="hibernate.cache.use_structured_entries">true</property>
+        <property name="hibernate.cache.ehcache.missing_cache_strategy">create</property>
+        <property name="hibernate.cache.ehcache.query_cache.refresh_interval">30</property>
 
         <mapping class="com.aston.entities.User" />
         <mapping class="com.aston.entities.Project" />

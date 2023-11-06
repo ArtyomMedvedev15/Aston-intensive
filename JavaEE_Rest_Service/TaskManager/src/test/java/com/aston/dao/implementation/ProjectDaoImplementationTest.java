@@ -121,4 +121,22 @@ public class ProjectDaoImplementationTest {
         Assert.assertTrue(allProject.size()>0);
     }
 
+    public void MillionTestTime(){
+        for (int i = 1; i < 1000000; i++) {
+            Project project = new Project();
+            project.setName("Project "+i);
+            project.setDescription("Description test " + i);
+            projectDaoImplementation.createProject(project);
+        }
+
+        long startTime = System.currentTimeMillis();
+        List<Project> projectByName = projectDaoImplementation.getProjectByName("Project 5");
+        System.out.println(projectByName.size());
+        long endTime = System.currentTimeMillis();
+
+        long executionTime = endTime - startTime;
+        System.out.println("Метод выполнился за " + executionTime + " миллисекунд");
+
+    }
+
 }
