@@ -38,6 +38,9 @@ public class ContextListener implements ServletContextListener {
     private TaskServiceApi taskServiceApi;
     private UserTaskServiceApi userTaskServiceApi;
     private UserTaskDaoApi userTaskDaoApi;
+    private ActivityDaoApi activityDaoApi;
+    private BugDaoApi bugDaoApi;
+    private MeetingDaoApi meetingDaoApi;
     @Override
     public void contextInitialized(ServletContextEvent servletContextEvent) {
         Flyway flyway = Flyway.configure()
@@ -58,6 +61,10 @@ public class ContextListener implements ServletContextListener {
         this.taskDaoApi = new TaskDaoImplementation(sessionFactory);
         this.projectDaoApi = new ProjectDaoImplementation(sessionFactory);
         this.userTaskDaoApi = new UserTaskDaoImplementation(sessionFactory);
+        this.activityDaoApi = new ActivityDaoImplementation(sessionFactory);
+        this.bugDaoApi = new BugDaoImplementation(sessionFactory);
+        this.meetingDaoApi = new MeetingDaoImplemntation(sessionFactory);
+
         this.userServiceApi = new UserServiceImplementation(userDaoApi,sessionFactory);
         this.userTaskServiceApi = new UserTaskServiceImplementation(userDaoApi, sessionFactory, taskDaoApi, new UserTaskDaoImplementation(sessionFactory));
         this.projectServiceApi = new ProjectServiceImplementation(projectDaoApi, sessionFactory);

@@ -70,18 +70,18 @@ SELECT 779, 'TestTask3','TestTask3','2023-10-27','Open',779
         SELECT id FROM taskmanager.task WHERE id = 779
     );
 
-INSERT INTO taskmanager.user_task
-(user_id,task_id)
-SELECT 777,779
+INSERT INTO taskmanager.usertask
+(id,user_id,task_id)
+SELECT 888,777,779
     WHERE
     NOT EXISTS (
-        SELECT user_id FROM taskmanager.user_task WHERE user_id = 777
+        SELECT user_id FROM taskmanager.usertask WHERE user_id = 777
     );
 
-INSERT INTO taskmanager.user_task
-(user_id,task_id)
-SELECT 778,778
+INSERT INTO taskmanager.usertask
+(id,user_id,task_id)
+SELECT 777,778,778
     WHERE
     NOT EXISTS (
-        SELECT user_id FROM taskmanager.user_task WHERE user_id = 778
+        SELECT user_id FROM taskmanager.usertask WHERE user_id = 778
     );
